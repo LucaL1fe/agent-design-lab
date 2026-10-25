@@ -79,6 +79,9 @@ export interface Handover {
   link?: { id: Id; arrow: Arrow };
   notes: Id[];
   portals: { page: string; id: Id }[];
+  /** Arrows of the replaced screen that would only have repeated an arrow the pick already had between the same two
+   *  screens (its own arrow and label win), kept as they would have been moved, so an undo puts them back. */
+  merged?: { id: Id; arrow: Arrow }[];
 }
 
 interface ItemBase {

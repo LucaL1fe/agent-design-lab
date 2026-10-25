@@ -438,6 +438,26 @@ describe('proposals and history', () => {
     const back = applyOps(after, invertOps(r.ops)).docs;
     expect(jsonEqual(back, d)).toBe(true);
   });
+  it('a pick does not repeat an arrow the option already has: its own arrow wins, an undo brings the other back', () => {
+    // regression from a real canvas: a screen led to the original and to its option with two different labels; the
+    // pick moved the original's arrow onto the option, so two arrows ran between the same two screens
+    const d = demo();
+    d.pages.truth!.arrows['S4>S6a'] = { from: 'S4', to: 'S6a', label: 'says no, kindly' };
+    const r = pickProposal(d, 'truth', 'S6a', 'human');
+    const after = applyOps(d, r.ops).docs;
+    const between = Object.values(after.pages.truth!.arrows).filter((a) => a.from === 'S4' && a.to === 'S6a');
+    expect(between).toEqual([{ from: 'S4', to: 'S6a', label: 'says no, kindly' }]);
+    expect(after.pages[HISTORY_PAGE]!.items.S6?.archived?.handover?.merged).toEqual([
+      { id: 'S4>S6', arrow: { from: 'S4', to: 'S6a', label: 'says no' } },
+    ]);
+    // restoring the original undoes the pick: both arrows are where they were before
+    const t = applyOps(after, restoreFromHistory(after, 'S6').ops).docs.pages.truth!;
+    expect(t.arrows['S4>S6']).toMatchObject({ from: 'S4', to: 'S6', label: 'says no' });
+    expect(Object.values(t.arrows).filter((a) => a.from === 'S4' && a.to === 'S6a')).toEqual([
+      { from: 'S4', to: 'S6a', label: 'says no, kindly' },
+    ]);
+    expect(jsonEqual(applyOps(after, invertOps(r.ops)).docs, d)).toBe(true);
+  });
   it('picking an option of an option puts it in the place of that option in the chain, then it can replace the original', () => {
     const d = demo();
     d.pages.truth!.items.S6c = { kind: 'screen', parent: 'library', status: 'new', proposalFor: 'S6a' };

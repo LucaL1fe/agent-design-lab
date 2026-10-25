@@ -486,8 +486,15 @@ function takePlace(tx: Tx, page: string, proposalId: Id, targetId: Id, siblings:
   }
   if ((T as ScreenItem).entry) next.entry = true;
   tx.setItem(page, proposalId, next);
-  // 2. arrows to and from the original now point at the proposal (except the proposal links themselves)
+  // 2. arrows to and from the original now point at the proposal (except the proposal links themselves); one that
+  //    would repeat an arrow the proposal already has between the same two screens is merged into that one
   const proposalSet = new Set([proposalId, ...siblings]);
+  const pair = (a: Arrow) => JSON.stringify([a.from, a.to]);
+  const own = new Set(
+    Object.values(tx.page(page).arrows)
+      .filter((a) => a.from === proposalId || a.to === proposalId)
+      .map(pair),
+  );
   for (const [aid, a] of Object.entries(tx.page(page).arrows)) {
     const linksProposal =
       (a.from === targetId && proposalSet.has(a.to)) || (a.to === targetId && proposalSet.has(a.from));
@@ -518,6 +525,10 @@ function takePlace(tx: Tx, page: string, proposalId: Id, targetId: Id, siblings:
     };
     if (moved.from === moved.to && a.from !== a.to) continue;
     tx.setArrow(page, aid, undefined);
+    if (own.has(pair(moved))) {
+      handover.merged = [...(handover.merged ?? []), { id: aid, arrow: moved }];
+      continue;
+    }
     const nid = arrowId(moved.from, moved.to, (x) => x in tx.page(page).arrows);
     tx.setArrow(page, nid, moved);
     handover.arrows.push(nid);
@@ -667,6 +678,15 @@ function undoPick(tx: Tx, page: string, id: Id, back: Item, heirId: Id, handover
     if (!ar || (ar.from !== heirId && ar.to !== heirId)) continue;
     tx.setArrow(page, aid, undefined);
     const moved: Arrow = { ...ar, from: swap(ar.from), to: swap(ar.to) };
+    tx.setArrow(
+      page,
+      arrowId(moved.from, moved.to, (x) => x in tx.page(page).arrows),
+      moved,
+    );
+  }
+  // the arrows the pick's own arrows stood in for come back on the restored screen
+  for (const m of handover?.merged ?? []) {
+    const moved: Arrow = { ...m.arrow, from: swap(m.arrow.from), to: swap(m.arrow.to) };
     tx.setArrow(
       page,
       arrowId(moved.from, moved.to, (x) => x in tx.page(page).arrows),
