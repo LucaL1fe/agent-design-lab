@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reminders off (denied)</title>
+<link rel="stylesheet" href="../styles/tokens.css">
+<link rel="stylesheet" href="../styles/components.css">
+<style>
+  .content { gap: var(--space-5); padding-top: var(--space-6); }
+  .preview { display: grid; gap: var(--space-2); margin-top: var(--space-1); }
+</style>
+</head>
+<body>
+<main class="screen">
+  <div class="statusbar"><span>21:08</span><svg width="70" height="13" viewBox="0 0 70 13" aria-hidden="true"><g fill="currentColor"><rect x="0" y="8.5" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="6.5" rx="1"/><rect x="10" y="3.5" width="3" height="9" rx="1"/><rect x="15" y="1" width="3" height="11.5" rx="1"/><circle cx="29" cy="11" r="1.6"/><rect x="44.5" y="3.5" width="19" height="7" rx="1.6"/></g><g fill="none" stroke="currentColor"><path d="M23.6 5.6a8 8 0 0 1 10.8 0M25.9 8.3a4.6 4.6 0 0 1 6.2 0" stroke-width="1.8" stroke-linecap="round"/><rect x="42.5" y="1.5" width="23" height="11" rx="3.2" opacity=".4"/></g><rect x="67" y="5" width="1.6" height="4" rx=".8" fill="currentColor" opacity=".4"/></svg></div>
+  <section class="content">
+    <div>
+      <h1 class="title">When should we remind you?</h1>
+      <p class="lede">One gentle nudge a day. Change it or turn it off any time.</p>
+    </div>
+    <div class="chips">
+      <span class="chip">Morning</span>
+      <span class="chip">Lunchtime</span>
+      <span class="chip is-selected">Before bed</span>
+    </div>
+    <div class="wheel" aria-label="Reminder time"><span class="near">21:00</span><span class="is-selected">21:30</span><span class="near">22:00</span></div>
+    <div class="preview">
+      <p class="eyebrow">What you’ll see</p>
+      <div class="notif"><img class="app-icon" src="../assets/app-icon.svg" alt=""><div style="flex:1"><div class="notif-head"><b>Still</b><time>21:30</time></div>Your evening minutes are ready. Day 2: Breathing out stress.</div></div>
+    </div>
+  </section>
+  <footer class="actions">
+    <p class="fine">Next, iPhone will ask if Still may send notifications.</p>
+    <button class="btn">Remind me at 21:30</button>
+    <button class="btn btn-ghost">Not now</button>
+  </footer>
+  <div class="scrim"></div>
+  <div class="sheet" role="dialog">
+    <div class="sheet-grabber"></div>
+    <span class="o-icon" aria-hidden="true"><svg class="i" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 9.4-4.9M18 11v5l1.5 2H8"/><path d="M10 20.5a2 2 0 0 0 4 0"/><path d="M4 4l16 16"/></svg></span>
+    <h2 class="title" style="margin-top:var(--space-4)">No reminders, that’s okay</h2>
+    <p class="lede">Still will stay quiet. If you change your mind, go to Settings › Notifications › Still.</p>
+    <div class="actions" style="padding-top:var(--space-6)">
+      <button class="btn" data-adl-anchor="continue" data-adl-go="S12">Continue</button>
+      <button class="btn btn-ghost" data-adl-anchor="settings">Open Settings</button>
+    </div>
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily time</title>
+<link rel="stylesheet" href="../styles/tokens.css">
+<link rel="stylesheet" href="../styles/components.css">
+<style>
+  .head { padding: var(--space-4) 0 var(--space-8); }
+  .tiles { row-gap: var(--space-5); }
+  .tile { min-height: 112px; justify-content: flex-end; }
+  .hint { display: flex; gap: var(--space-3); margin-top: var(--space-6); color: var(--color-muted); font-size: var(--text-sm); }
+  .hint .i { width: 20px; height: 20px; color: var(--color-hill-3); }
+</style>
+</head>
+<body>
+<main class="screen">
+  <div class="statusbar"><span>21:05</span><svg width="70" height="13" viewBox="0 0 70 13" aria-hidden="true"><g fill="currentColor"><rect x="0" y="8.5" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="6.5" rx="1"/><rect x="10" y="3.5" width="3" height="9" rx="1"/><rect x="15" y="1" width="3" height="11.5" rx="1"/><circle cx="29" cy="11" r="1.6"/><rect x="44.5" y="3.5" width="19" height="7" rx="1.6"/></g><g fill="none" stroke="currentColor"><path d="M23.6 5.6a8 8 0 0 1 10.8 0M25.9 8.3a4.6 4.6 0 0 1 6.2 0" stroke-width="1.8" stroke-linecap="round"/><rect x="42.5" y="1.5" width="23" height="11" rx="3.2" opacity=".4"/></g><rect x="67" y="5" width="1.6" height="4" rx=".8" fill="currentColor" opacity=".4"/></svg></div>
+  <header class="topbar">
+    <button class="icon-btn" aria-label="Back" data-adl-anchor="back" data-adl-go="S3"><svg class="i" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <div class="progress"><i class="is-done"></i><i class="is-done"></i><i class="is-done"></i></div>
+    <span class="step">3 / 3</span>
+  </header>
+  <section class="content">
+    <div class="head rise">
+      <h1 class="title">How much time feels doable each day?</h1>
+      <p class="lede">Most people start small. You can change this any time.</p>
+    </div>
+    <div class="tiles rise">
+      <div class="tile"><span class="tile-num">3<small>min</small></span><span class="tile-label">A quick breather</span></div>
+      <div class="tile is-selected"><span class="badge">Best start</span><span class="tile-num">5<small>min</small></span><span class="tile-label">Easy to fit in</span></div>
+      <div class="tile"><span class="tile-num">10<small>min</small></span><span class="tile-label">A proper reset</span></div>
+      <div class="tile"><span class="tile-num">20<small>min</small></span><span class="tile-label">Deep practice</span></div>
+    </div>
+    <p class="hint"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>A few minutes most days does more than an hour once a month.</p>
+  </section>
+  <footer class="actions">
+    <button class="btn" data-adl-anchor="build" data-adl-go="S5">Build my plan</button>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "name": "agent-design-lab",
+  "owner": { "name": "LucaL1fe" },
+  "plugins": [
+    {
+      "name": "agent-design-lab",
+      "source": ".",
+      "description": "The Agent Design Lab skill and hooks: Claude designs on the canvas, sees what you changed, and shows what it is doing."
+    }
+  ]
+}

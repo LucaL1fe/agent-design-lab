@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="adl:frame" content="web">
+<title>Page title</title>
+<link rel="stylesheet" href="../styles/tokens.css">
+<link rel="stylesheet" href="../styles/components.css">
+<style>
+  /* A full-length web page (frame "web" = 1440 wide, height follows the content). */
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 var(--space-8); }
+  .nav { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+  .hero { padding: 120px 0 96px; display: grid; grid-template-columns: 1.1fr 0.9fr; gap: var(--space-12); align-items: center; }
+  .hero h1 { margin: 0 0 var(--space-4); font-size: 56px; line-height: 1.05; letter-spacing: -0.02em; }
+  .hero p { margin: 0 0 var(--space-8); font-size: var(--text-lg); color: var(--color-muted); max-width: 52ch; }
+  section + section { padding: 96px 0; border-top: 1px solid var(--color-line); }
+  footer { padding: var(--space-12) 0; color: var(--color-muted); font-size: var(--text-sm); }
+  @media (max-width: 720px) {
+    .hero { grid-template-columns: 1fr; padding: 64px 0; }
+    .hero h1 { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="nav"><strong>Brand</strong><a class="btn" data-adl-anchor="nav-cta">Get started</a></nav>
+  <section class="hero">
+    <div>
+      <h1>The promise, in words the customer uses</h1>
+      <p>Who it is for and what changes for them, in one or two sentences.</p>
+      <a class="btn" data-adl-anchor="hero-cta">Primary action</a>
+    </div>
+    <div><!-- product picture or illustration from ../assets/ --></div>
+  </section>
+  <section><!-- proof, features, how it works, pricing, FAQ: one idea per section --></section>
+  <footer>© Brand</footer>
+</div>
+</body>
+</html>

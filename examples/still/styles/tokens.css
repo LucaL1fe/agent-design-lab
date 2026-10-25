@@ -1,0 +1,101 @@
+/* Still: design tokens. The single source for colours, type, spacing, radii, depth and motion.
+   Warm paper, pine ink, one pine accent for actions; sunset tones are for illustration only. */
+/* Fonts are self-hosted (latin subset, variable): Fraunces 400–600 with optical size, Figtree 400–700. */
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: block;
+  src: url("../assets/fonts/fraunces-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Figtree";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: block;
+  src: url("../assets/fonts/figtree-latin.woff2") format("woff2");
+}
+
+:root {
+  /* colour roles: day */
+  --color-bg: #f4efe6;          /* warm paper */
+  --color-surface: #fbf8f3;     /* cards, sheets, inputs */
+  --color-surface-2: #ebe4d7;   /* wells, pressed, unselected tracks */
+  --color-text: #1e2b26;        /* pine ink */
+  --color-muted: #5c6660;       /* 5.1:1 on bg */
+  --color-line: #dcd3c3;
+  --color-accent: #2f5d4e;      /* pine: primary actions and selection only */
+  --color-accent-ink: #fbf8f3;
+  --color-accent-soft: #dfe8e1; /* selected backgrounds */
+  --color-success: #3b7a57;
+  --color-warning: #9a6212;
+  --color-danger: #a8402d;
+  --color-danger-soft: #f6e3dc;
+  --color-scrim: rgb(20 28 25 / 0.45);
+
+  /* colour roles: dusk (session player) */
+  --color-night: #15201c;
+  --color-night-2: #22322b;
+  --color-night-text: #efe8da;
+  --color-night-muted: #a9b3ac;
+
+  /* illustration only (never on controls) */
+  --color-sun: #e9a06b;
+  --color-sun-soft: #f3caa4;
+  --color-hill-1: #c7d3c6;
+  --color-hill-2: #94ab9c;
+  --color-hill-3: #5f806f;
+
+  /* type */
+  --font-display: "Fraunces", Georgia, serif;
+  --font-sans: "Figtree", system-ui, -apple-system, sans-serif;
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-md: 16px;
+  --text-lg: 20px;
+  --text-xl: 28px;
+  --text-2xl: 36px;
+  --text-3xl: 48px;
+  --leading: 1.45;
+  --leading-tight: 1.15;
+
+  /* spacing (4 px grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* iOS safe areas (iPhone 16) */
+  --safe-top: 54px;
+  --safe-bottom: 34px;
+
+  /* shape and depth */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 999px;
+  --shadow-sm: 0 1px 2px rgb(30 43 38 / 0.06);
+  --shadow-md: 0 8px 24px rgb(30 43 38 / 0.10);
+  --shadow-lg: 0 18px 48px rgb(20 28 25 / 0.22);
+
+  /* motion */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-breath: cubic-bezier(0.45, 0, 0.55, 1);
+  --dur-fast: 150ms;
+  --dur-med: 300ms;
+  --dur-slow: 600ms;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: var(--text-md) / var(--leading) var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}

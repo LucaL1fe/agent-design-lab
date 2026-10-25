@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.adl/
+workspace/*
+!workspace/README.md
+bench/results/
+test-results/
+playwright-report/
+*.log
+.DS_Store
+bench/fixtures/

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home · returning</title>
+<link rel="stylesheet" href="../styles/tokens.css">
+<link rel="stylesheet" href="../styles/components.css">
+<style>
+  .content { padding-top: var(--space-4); }
+  .greet { margin-bottom: var(--space-5); }
+  .greet .title { font-size: var(--text-2xl); margin-top: var(--space-1); }
+  .progress-line { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-5) 0; font-size: var(--text-sm); color: var(--color-muted); }
+  .progress-line b { color: var(--color-text); font-weight: 600; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); padding: var(--space-4) 0; }
+  .stats div { padding: 0 var(--space-4); border-left: 1px solid var(--color-line); }
+  .stats div:first-child { border-left: 0; }
+  .stats b { display: block; font: 500 var(--text-xl) / 1.1 var(--font-display); font-variant-numeric: tabular-nums; }
+  .stats span { font-size: var(--text-sm); color: var(--color-muted); }
+  .toast { position: absolute; left: var(--space-6); right: var(--space-6); bottom: calc(49px + var(--safe-bottom) + 16px); z-index: 25; }
+  @media (prefers-reduced-motion: no-preference) {
+    .toast { animation: still-rise var(--dur-med) var(--ease-out) 500ms both; }
+  }
+</style>
+</head>
+<body>
+<main class="screen">
+  <div class="statusbar"><span>07:43</span><svg width="70" height="13" viewBox="0 0 70 13" aria-hidden="true"><g fill="currentColor"><rect x="0" y="8.5" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="6.5" rx="1"/><rect x="10" y="3.5" width="3" height="9" rx="1"/><rect x="15" y="1" width="3" height="11.5" rx="1"/><circle cx="29" cy="11" r="1.6"/><rect x="44.5" y="3.5" width="19" height="7" rx="1.6"/></g><g fill="none" stroke="currentColor"><path d="M23.6 5.6a8 8 0 0 1 10.8 0M25.9 8.3a4.6 4.6 0 0 1 6.2 0" stroke-width="1.8" stroke-linecap="round"/><rect x="42.5" y="1.5" width="23" height="11" rx="3.2" opacity=".4"/></g><rect x="67" y="5" width="1.6" height="4" rx=".8" fill="currentColor" opacity=".4"/></svg></div>
+  <section class="content rise">
+    <header class="greet">
+      <p class="eyebrow">Saturday 24 October</p>
+      <h1 class="title">Good morning, Maya</h1>
+    </header>
+    <article class="feature">
+      <img src="../assets/horizon-band.svg" alt="">
+      <div class="progress-line"><span><b>Calm Start</b> · Day 3 done</span><span class="dots"><i class="is-done"></i><i class="is-done"></i><i class="is-done"></i><i class="is-next"></i><i></i><i></i><i></i></span></div>
+      <div class="feature-body">
+        <div class="feature-text">
+          <p class="eyebrow">Pick up where you left off · Day 4</p>
+          <span class="feature-title">Noticing busy thoughts</span>
+          <span class="feature-sub">5 min · guided by Tom</span>
+        </div>
+        <button class="play-btn" aria-label="Play Day 4" data-adl-anchor="play"><svg class="i" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5-11-6.5Z"/></svg></button>
+      </div>
+    </article>
+    <p class="section-label">Your practice so far</p>
+    <div class="card stats">
+      <div><b>3</b><span>days in a row</span></div>
+      <div><b>3</b><span>sessions</span></div>
+      <div><b>11</b><span>minutes</span></div>
+    </div>
+  </section>
+  <div class="toast" role="status"><svg class="i" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Signed in. Your progress is back.</div>
+  <nav class="tabbar">
+    <span class="tab is-active"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg>Today</span>
+    <span class="tab"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2Z"/></svg>Explore</span>
+    <span class="tab"><svg class="i" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z"/></svg>Sleep</span>
+    <span class="tab"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Profile</span>
+  </nav>
+</main>
+</body>
+</html>

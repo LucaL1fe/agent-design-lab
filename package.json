@@ -1,0 +1,86 @@
+{
+  "name": "agent-design-lab",
+  "private": true,
+  "version": "0.0.1",
+  "description": "A local canvas where Claude Code designs your app or website as live HTML screens joined by labelled arrows. The approved design is the source of truth you hand to the build.",
+  "license": "MIT",
+  "type": "module",
+  "author": "LucaL1fe",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LucaL1fe/agent-design-lab.git"
+  },
+  "keywords": [
+    "design",
+    "wireflow",
+    "mockup",
+    "claude-code",
+    "agent",
+    "canvas",
+    "prototype"
+  ],
+  "bin": {
+    "adl": "dist/node/cli.js",
+    "agent-design-lab": "dist/node/cli.js"
+  },
+  "files": [
+    "dist",
+    "skills",
+    "hooks",
+    "examples",
+    "!examples/*/.adl",
+    ".claude-plugin",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "dev": "node src/node/cli.ts open --dev",
+    "build": "vite build && tsdown",
+    "start": "node src/node/cli.ts open",
+    "typecheck": "tsc -p tsconfig.core.json && tsc -p tsconfig.node.json && tsc -p tsconfig.app.json && tsc -p tsconfig.tools.json",
+    "lint": "biome check .",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm run lint && npm test",
+    "e2e": "vite build && E2E=1 vitest run",
+    "bench": "node bench/run.ts",
+    "prepare": "npm run build",
+    "adl": "node src/node/cli.ts",
+    "prepack": "npm run build",
+    "sync-skill": "node test/tools/sync-skill.ts",
+    "bench:latency": "node bench/write-latency.ts"
+  },
+  "dependencies": {
+    "parse5": "8.0.1",
+    "pixelmatch": "8.0.0",
+    "playwright-core": "1.64.0",
+    "pngjs": "7.0.0",
+    "postcss": "8.5.29",
+    "postcss-selector-parser": "7.1.6",
+    "postcss-value-parser": "4.2.0",
+    "ws": "8.22.0",
+    "zod": "4.6.6"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@fontsource-variable/instrument-sans": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@playwright/test": "1.64.0",
+    "@types/node": "26.6.5",
+    "@types/pngjs": "^6.0.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/ws": "8.18.2",
+    "@vitejs/plugin-react": "6.1.2",
+    "fast-check": "4.10.2",
+    "lucide-react": "^1.55.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "tsdown": "0.23.1",
+    "typescript": "7.0.2",
+    "vite": "8.3.4",
+    "vitest": "5.0.3"
+  }
+}

@@ -1,0 +1,4 @@
+#!/bin/sh
+# Agent Design Lab's command line, run from a clone of this repo: ./adl <command>  (./adl help lists them)
+dir=$(cd "$(dirname "$0")" && pwd)
+exec node "$dir/src/node/cli.ts" "$@"

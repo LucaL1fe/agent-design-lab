@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Experience</title>
+<link rel="stylesheet" href="../styles/tokens.css">
+<link rel="stylesheet" href="../styles/components.css">
+<style>
+  .head { padding: var(--space-4) 0 var(--space-6); }
+  .option { min-height: 84px; }
+</style>
+</head>
+<body>
+<main class="screen">
+  <div class="statusbar"><span>21:05</span><svg width="70" height="13" viewBox="0 0 70 13" aria-hidden="true"><g fill="currentColor"><rect x="0" y="8.5" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="6.5" rx="1"/><rect x="10" y="3.5" width="3" height="9" rx="1"/><rect x="15" y="1" width="3" height="11.5" rx="1"/><circle cx="29" cy="11" r="1.6"/><rect x="44.5" y="3.5" width="19" height="7" rx="1.6"/></g><g fill="none" stroke="currentColor"><path d="M23.6 5.6a8 8 0 0 1 10.8 0M25.9 8.3a4.6 4.6 0 0 1 6.2 0" stroke-width="1.8" stroke-linecap="round"/><rect x="42.5" y="1.5" width="23" height="11" rx="3.2" opacity=".4"/></g><rect x="67" y="5" width="1.6" height="4" rx=".8" fill="currentColor" opacity=".4"/></svg></div>
+  <header class="topbar">
+    <button class="icon-btn" aria-label="Back" data-adl-anchor="back" data-adl-go="S2"><svg class="i" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <div class="progress"><i class="is-done"></i><i class="is-done"></i><i></i></div>
+    <span class="step">2 / 3</span>
+  </header>
+  <section class="content">
+    <div class="head rise">
+      <h1 class="title">Have you meditated before?</h1>
+      <p class="lede">There’s no wrong answer. It sets how much guidance you’ll hear.</p>
+    </div>
+    <div class="options rise">
+      <div class="option is-selected"><span class="o-text"><span class="o-title">No, I’m new to this</span><span class="o-sub">We’ll explain everything, one step at a time.</span></span><span class="o-radio"></span></div>
+      <div class="option"><span class="o-text"><span class="o-title">A few times</span><span class="o-sub">You know the idea. We’ll help it stick.</span></span><span class="o-radio"></span></div>
+      <div class="option"><span class="o-text"><span class="o-title">Yes, I practise regularly</span><span class="o-sub">Less talking, more silence.</span></span><span class="o-radio"></span></div>
+    </div>
+  </section>
+  <footer class="actions">
+    <button class="btn" data-adl-anchor="continue" data-adl-go="S4">Continue</button>
+  </footer>
+</main>
+</body>
+</html>

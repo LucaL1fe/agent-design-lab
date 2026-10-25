@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Save progress (account)</title>
+<link rel="stylesheet" href="../styles/tokens.css">
+<link rel="stylesheet" href="../styles/components.css">
+<style>
+  .content { padding-top: var(--space-10); }
+  .kept { margin-top: var(--space-6); padding: var(--space-4) var(--space-5); }
+  .kept .row { min-height: 52px; }
+  .kept .row .i { color: var(--color-hill-3); }
+</style>
+</head>
+<body>
+<main class="screen">
+  <div class="statusbar"><span>21:09</span><svg width="70" height="13" viewBox="0 0 70 13" aria-hidden="true"><g fill="currentColor"><rect x="0" y="8.5" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="6.5" rx="1"/><rect x="10" y="3.5" width="3" height="9" rx="1"/><rect x="15" y="1" width="3" height="11.5" rx="1"/><circle cx="29" cy="11" r="1.6"/><rect x="44.5" y="3.5" width="19" height="7" rx="1.6"/></g><g fill="none" stroke="currentColor"><path d="M23.6 5.6a8 8 0 0 1 10.8 0M25.9 8.3a4.6 4.6 0 0 1 6.2 0" stroke-width="1.8" stroke-linecap="round"/><rect x="42.5" y="1.5" width="23" height="11" rx="3.2" opacity=".4"/></g><rect x="67" y="5" width="1.6" height="4" rx=".8" fill="currentColor" opacity=".4"/></svg></div>
+  <section class="content rise">
+    <div>
+      <h1 class="title">Keep your progress</h1>
+      <p class="lede">A free account keeps everything safe, and with you on any device.</p>
+    </div>
+    <div class="card kept">
+      <div class="row"><svg class="i" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="row-text"><span class="row-title">Day 1 of Calm Start</span></span><span class="row-meta">done today</span></div>
+      <div class="row"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><span class="row-text"><span class="row-title">Your plan and answers</span></span><span class="row-meta">5 min a day</span></div>
+    </div>
+  </section>
+  <footer class="actions">
+    <button class="btn btn-apple" data-adl-anchor="apple" data-adl-go="S14"><svg class="i" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M16.4 12.6c0-2.4 2-3.5 2-3.6-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9-.7 0-1.8-.8-3-.8-1.6 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.2.8 1.1 1.7 2.3 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.2.9-1.3 1.3-2.5 1.3-2.6 0 0-2.5-1-2.5-3.7ZM14.1 5.6c.6-.8 1.1-1.8 1-2.9-.9 0-2.1.6-2.7 1.4-.6.7-1.1 1.8-1 2.8 1 .1 2.1-.5 2.7-1.3Z"/></svg>Sign in with Apple</button>
+    <button class="btn btn-secondary" data-adl-anchor="google"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="#4285F4" d="M22.5 12.3c0-.8-.1-1.5-.2-2.3H12v4.3h5.9a5 5 0 0 1-2.2 3.3v2.8h3.6c2.1-1.9 3.2-4.8 3.2-8.1Z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.6-2.8c-1 .7-2.2 1.1-3.7 1.1-2.9 0-5.3-1.9-6.2-4.5H2.1v2.9A11 11 0 0 0 12 23Z"/><path fill="#FBBC05" d="M5.8 14.1a6.6 6.6 0 0 1 0-4.2V7H2.1a11 11 0 0 0 0 10l3.7-2.9Z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.2-3.2A11 11 0 0 0 2.1 7l3.7 2.9C6.7 7.3 9.1 5.4 12 5.4Z"/></svg>Continue with Google</button>
+    <button class="btn btn-secondary" data-adl-anchor="email"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7l8 6 8-6"/></svg>Continue with email</button>
+    <button class="btn btn-ghost" data-adl-anchor="later" data-adl-go="S14">Not now</button>
+    <p class="fine">By continuing you agree to the <a>Terms</a> and <a>Privacy Policy</a>.</p>
+  </footer>
+</main>
+</body>
+</html>

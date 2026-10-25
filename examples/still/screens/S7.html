@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>First breath (session)</title>
+<link rel="stylesheet" href="../styles/tokens.css">
+<link rel="stylesheet" href="../styles/components.css">
+<style>
+  .topbar { justify-content: space-between; }
+  .session { text-align: center; line-height: 1.3; }
+  .session b { display: block; font-weight: 600; }
+  .session span { font-size: var(--text-sm); color: var(--color-night-muted); }
+  .content { align-items: center; justify-content: center; gap: var(--space-8); }
+  .orb { position: relative; width: 264px; height: 264px; }
+  .orb i { position: absolute; inset: 0; border-radius: var(--radius-full); }
+  .orb .guide { box-shadow: inset 0 0 0 1px rgb(239 232 218 / 0.14); }
+  .orb .glow { background: radial-gradient(circle, rgb(233 160 107 / 0.42), rgb(233 160 107 / 0) 70%); }
+  .orb .core { inset: 36px; background: radial-gradient(circle at 50% 38%, var(--color-sun-soft), var(--color-sun) 62%, #c9784a); box-shadow: 0 0 64px rgb(233 160 107 / 0.35); }
+  .phase { text-align: center; }
+  .phase .display { font-size: var(--text-2xl); }
+  .phase p { margin: var(--space-2) 0 0; color: var(--color-night-muted); }
+  .caption { margin: 0; max-width: 300px; text-align: center; font: 400 var(--text-lg) / 1.4 var(--font-display); color: var(--color-night-text); opacity: 0.85; }
+  .time { display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; gap: var(--space-3); font-size: var(--text-sm); color: var(--color-night-muted); font-variant-numeric: tabular-nums; }
+  .time span:last-child { text-align: right; }
+  .bar { height: 4px; border-radius: var(--radius-full); background: var(--color-night-2); overflow: hidden; }
+  .bar i { display: block; width: 38%; height: 100%; background: var(--color-night-text); border-radius: inherit; }
+  .controls { display: flex; align-items: center; justify-content: center; gap: var(--space-8); padding: var(--space-5) 0 var(--space-4); }
+  .play { display: grid; place-items: center; width: 72px; height: 72px; border: 0; border-radius: var(--radius-full); background: var(--color-night-text); color: var(--color-night); }
+  .play .i { width: 28px; height: 28px; stroke-width: 2.25; }
+  @media (prefers-reduced-motion: no-preference) {
+    .orb .core, .orb .glow { animation: breathe 4s var(--ease-breath) -2.6s infinite alternate; }
+    @keyframes breathe { from { transform: scale(0.62); } to { transform: scale(1); } }
+  }
+</style>
+</head>
+<body>
+<main class="screen night">
+  <div class="statusbar"><span>21:07</span><svg width="70" height="13" viewBox="0 0 70 13" aria-hidden="true"><g fill="currentColor"><rect x="0" y="8.5" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="6.5" rx="1"/><rect x="10" y="3.5" width="3" height="9" rx="1"/><rect x="15" y="1" width="3" height="11.5" rx="1"/><circle cx="29" cy="11" r="1.6"/><rect x="44.5" y="3.5" width="19" height="7" rx="1.6"/></g><g fill="none" stroke="currentColor"><path d="M23.6 5.6a8 8 0 0 1 10.8 0M25.9 8.3a4.6 4.6 0 0 1 6.2 0" stroke-width="1.8" stroke-linecap="round"/><rect x="42.5" y="1.5" width="23" height="11" rx="3.2" opacity=".4"/></g><rect x="67" y="5" width="1.6" height="4" rx=".8" fill="currentColor" opacity=".4"/></svg></div>
+  <header class="topbar">
+    <button class="icon-btn filled" aria-label="Close" data-adl-anchor="close" data-adl-go="S6"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="session"><b>First breath</b><span>Day 1 of Calm Start</span></div>
+    <button class="icon-btn filled" aria-label="Sound"><svg class="i" viewBox="0 0 24 24"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="6" rx="2"/><rect x="17" y="14" width="4" height="6" rx="2"/></svg></button>
+  </header>
+  <section class="content">
+    <div class="orb" aria-hidden="true"><i class="guide"></i><i class="glow"></i><i class="core"></i></div>
+    <div class="phase">
+      <h1 class="display">Breathe in</h1>
+      <p>through your nose, for four</p>
+    </div>
+    <p class="caption">“Let your shoulders drop a little as the breath comes in.”</p>
+  </section>
+  <footer>
+    <div class="time"><span>0:23</span><div class="bar"><i></i></div><span>-0:37</span></div>
+    <div class="controls">
+      <button class="play" aria-label="Pause"><svg class="i" viewBox="0 0 24 24"><path d="M9 6v12M15 6v12"/></svg></button>
+    </div>
+  </footer>
+</main>
+</body>
+</html>

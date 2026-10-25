@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="adl:frame" content="iphone-16">
+<title>Screen title</title>
+<link rel="stylesheet" href="../styles/tokens.css">
+<link rel="stylesheet" href="../styles/components.css">
+<style>
+  /* An app screen: status bar space on top, content, primary action in the thumb zone. */
+  .screen { min-height: 100vh; display: flex; flex-direction: column; box-sizing: border-box; padding: 54px var(--space-6) 34px; }
+  .top { display: flex; align-items: center; justify-content: space-between; height: 44px; }
+  .content { flex: 1; display: flex; flex-direction: column; gap: var(--space-4); padding-top: var(--space-6); }
+  h1 { margin: 0; font-size: var(--text-xl); line-height: 1.15; }
+  .lede { margin: 0; color: var(--color-muted); }
+  .actions { display: grid; gap: var(--space-3); padding-top: var(--space-6); }
+  .actions .btn { width: 100%; }
+  @media (prefers-reduced-motion: no-preference) {
+    .content > * { animation: rise var(--dur-med) var(--ease-out) both; }
+    .content > *:nth-child(2) { animation-delay: 60ms; }
+    @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+  }
+</style>
+</head>
+<body>
+<main class="screen">
+  <header class="top">
+    <!-- back button, title or progress -->
+  </header>
+  <section class="content">
+    <h1>Say what this screen is for</h1>
+    <p class="lede">One short sentence that helps the person decide.</p>
+  </section>
+  <footer class="actions">
+    <button class="btn" data-adl-anchor="primary">Primary action</button>
+  </footer>
+</main>
+</body>
+</html>

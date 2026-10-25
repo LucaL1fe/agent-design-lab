@@ -1,0 +1,8 @@
+{
+  "name": "agent-design-lab",
+  "description": "Design apps and websites with Claude Code as live HTML screens joined by labelled arrows, on a local canvas that becomes the source of truth for the build.",
+  "version": "0.1.0",
+  "author": { "name": "LucaL1fe" },
+  "homepage": "https://github.com/LucaL1fe/agent-design-lab",
+  "license": "MIT"
+}

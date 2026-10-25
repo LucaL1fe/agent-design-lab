@@ -1,0 +1,9 @@
+{
+  "adl": 1,
+  "rev": 4,
+  "name": "Design system",
+  "items": {
+    "DS1": {"kind": "screen", "frame": "board", "title": "Design system", "status": "new", "banner": "palette, type, components: check before the screens"}
+  },
+  "arrows": {}
+}

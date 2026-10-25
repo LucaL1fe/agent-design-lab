@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 172 393 196" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f4efe6"/>
+      <stop offset=".72" stop-color="#f5dcc3"/>
+      <stop offset="1" stop-color="#f3d2b2"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ece2d2"/>
+      <stop offset="1" stop-color="#f4efe6"/>
+    </linearGradient>
+  </defs>
+  <rect width="393" height="322" fill="url(#sky)"/>
+  <circle cx="196" cy="262" r="132" fill="#f3caa4" opacity=".45"/>
+  <circle cx="196" cy="262" r="80" fill="#e9a06b"/>
+  <path d="M0 262 C 52 236 104 238 150 256 S 262 236 312 240 S 370 250 393 246 L393 322 L0 322 Z" fill="#c7d3c6"/>
+  <path d="M0 296 C 62 270 128 280 188 296 S 318 272 393 286 L393 322 L0 322 Z" fill="#94ab9c"/>
+  <path d="M0 312 C 44 302 92 304 136 314 L 393 314 L393 322 L0 322 Z" fill="#5f806f"/>
+  <path d="M250 316 C 300 304 352 304 393 310 L393 322 L250 322 Z" fill="#5f806f"/>
+  <rect y="322" width="393" height="98" fill="url(#water)"/>
+  <g fill="#e9a06b">
+    <rect x="128" y="334" width="136" height="4" rx="2" opacity=".75"/>
+    <rect x="148" y="348" width="96" height="4" rx="2" opacity=".55"/>
+    <rect x="166" y="362" width="60" height="4" rx="2" opacity=".38"/>
+    <rect x="182" y="376" width="28" height="4" rx="2" opacity=".22"/>
+  </g>
+</svg>

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="adl:frame" content="board">
+<title>Design system</title>
+<link rel="stylesheet" href="../styles/tokens.css">
+<link rel="stylesheet" href="../styles/components.css">
+<style>
+  /* Shows the tokens and components. Everything reads from tokens.css, so this board updates with it.
+     Add a swatch or a component sample here whenever you add one to styles/. */
+  body { padding: var(--space-12); }
+  h1 { margin: 0 0 var(--space-8); font-size: var(--text-2xl); }
+  h2 { margin: var(--space-12) 0 var(--space-4); font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-muted); }
+  .swatches { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--space-4); }
+  .sw { border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--color-line); font-size: var(--text-xs); }
+  .sw i { display: block; height: 72px; }
+  .sw span { display: block; padding: var(--space-2) var(--space-3); }
+  .type > * { margin: 0 0 var(--space-3); }
+  .row { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: center; }
+  .space i { display: inline-block; height: 16px; background: var(--color-accent); border-radius: 2px; }
+</style>
+</head>
+<body>
+  <h1>Design system</h1>
+  <h2>Colour roles</h2>
+  <div class="swatches">
+    <div class="sw"><i style="background:var(--color-bg)"></i><span>bg</span></div>
+    <div class="sw"><i style="background:var(--color-surface)"></i><span>surface</span></div>
+    <div class="sw"><i style="background:var(--color-text)"></i><span>text</span></div>
+    <div class="sw"><i style="background:var(--color-muted)"></i><span>muted</span></div>
+    <div class="sw"><i style="background:var(--color-line)"></i><span>line</span></div>
+    <div class="sw"><i style="background:var(--color-accent)"></i><span>accent</span></div>
+    <div class="sw"><i style="background:var(--color-success)"></i><span>success</span></div>
+    <div class="sw"><i style="background:var(--color-warning)"></i><span>warning</span></div>
+    <div class="sw"><i style="background:var(--color-danger)"></i><span>danger</span></div>
+  </div>
+  <h2>Type</h2>
+  <div class="type">
+    <p style="font-size:var(--text-2xl);font-weight:700">Display 2xl</p>
+    <p style="font-size:var(--text-xl);font-weight:700">Heading xl</p>
+    <p style="font-size:var(--text-lg);font-weight:600">Title lg</p>
+    <p style="font-size:var(--text-md)">Body md: the quick brown fox jumps over the lazy dog.</p>
+    <p style="font-size:var(--text-sm);color:var(--color-muted)">Caption sm</p>
+  </div>
+  <h2>Spacing</h2>
+  <div class="row space">
+    <i style="width:var(--space-1)"></i><i style="width:var(--space-2)"></i><i style="width:var(--space-3)"></i>
+    <i style="width:var(--space-4)"></i><i style="width:var(--space-6)"></i><i style="width:var(--space-8)"></i>
+    <i style="width:var(--space-12)"></i>
+  </div>
+  <h2>Components</h2>
+  <div class="row">
+    <button class="btn">Primary button</button>
+  </div>
+</body>
+</html>

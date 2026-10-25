@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Welcome</title>
+<link rel="stylesheet" href="../styles/tokens.css">
+<link rel="stylesheet" href="../styles/components.css">
+<style>
+  .hero { position: absolute; top: 0; left: 0; width: 100%; height: 500px; object-fit: cover; object-position: center bottom; }
+  .brand { position: relative; margin: var(--space-6) 0 0; text-align: center; font: 500 var(--text-xl) / 1 var(--font-display); letter-spacing: 0.01em; }
+  .content { justify-content: flex-end; position: relative; }
+  .display { max-width: 320px; }
+  @media (prefers-reduced-motion: no-preference) {
+    .hero { animation: dawn 900ms var(--ease-out) both; }
+    @keyframes dawn { from { opacity: 0; transform: translateY(16px); } }
+  }
+</style>
+</head>
+<body>
+<main class="screen">
+  <img class="hero" src="../assets/horizon.svg" alt="">
+  <div class="statusbar"><span>21:04</span><svg width="70" height="13" viewBox="0 0 70 13" aria-hidden="true"><g fill="currentColor"><rect x="0" y="8.5" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="6.5" rx="1"/><rect x="10" y="3.5" width="3" height="9" rx="1"/><rect x="15" y="1" width="3" height="11.5" rx="1"/><circle cx="29" cy="11" r="1.6"/><rect x="44.5" y="3.5" width="19" height="7" rx="1.6"/></g><g fill="none" stroke="currentColor"><path d="M23.6 5.6a8 8 0 0 1 10.8 0M25.9 8.3a4.6 4.6 0 0 1 6.2 0" stroke-width="1.8" stroke-linecap="round"/><rect x="42.5" y="1.5" width="23" height="11" rx="3.2" opacity=".4"/></g><rect x="67" y="5" width="1.6" height="4" rx=".8" fill="currentColor" opacity=".4"/></svg></div>
+  <p class="brand">Still</p>
+  <section class="content rise">
+    <h1 class="display">Make a little room to breathe</h1>
+    <p class="lede">Short guided meditations for stress and sleep. Your first one takes just a minute.</p>
+  </section>
+  <footer class="actions">
+    <button class="btn" data-adl-anchor="start" data-adl-go="S2">Get started</button>
+    <button class="btn btn-ghost" data-adl-anchor="signin" data-adl-go="S16">I already have an account</button>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Still Plus (free trial offer)</title>
+<link rel="stylesheet" href="../styles/tokens.css">
+<link rel="stylesheet" href="../styles/components.css">
+<style>
+  .content { padding-top: var(--space-6); gap: var(--space-5); }
+  .title { margin-top: var(--space-2); }
+  .checks { font-size: 15px; }
+  .plans .option { min-height: 68px; }
+  .o-title .badge { margin-left: var(--space-2); vertical-align: 1px; }
+  .timeline { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; padding: 0; list-style: none; }
+  .timeline li { position: relative; padding-top: var(--space-5); padding-right: var(--space-2); font-size: var(--text-xs); line-height: 1.4; color: var(--color-muted); }
+  .timeline li::before { content: ""; position: absolute; top: 4px; left: 0; width: 10px; height: 10px; border-radius: var(--radius-full); background: var(--color-surface); box-shadow: inset 0 0 0 2px var(--color-accent); }
+  .timeline li:first-child::before { background: var(--color-accent); }
+  .timeline li::after { content: ""; position: absolute; top: 8px; left: 14px; right: 4px; height: 2px; background: var(--color-line); }
+  .timeline li:last-child::after { display: none; }
+  .timeline b { display: block; font-size: var(--text-sm); color: var(--color-text); }
+</style>
+</head>
+<body>
+<main class="screen">
+  <div class="statusbar"><span>21:10</span><svg width="70" height="13" viewBox="0 0 70 13" aria-hidden="true"><g fill="currentColor"><rect x="0" y="8.5" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="6.5" rx="1"/><rect x="10" y="3.5" width="3" height="9" rx="1"/><rect x="15" y="1" width="3" height="11.5" rx="1"/><circle cx="29" cy="11" r="1.6"/><rect x="44.5" y="3.5" width="19" height="7" rx="1.6"/></g><g fill="none" stroke="currentColor"><path d="M23.6 5.6a8 8 0 0 1 10.8 0M25.9 8.3a4.6 4.6 0 0 1 6.2 0" stroke-width="1.8" stroke-linecap="round"/><rect x="42.5" y="1.5" width="23" height="11" rx="3.2" opacity=".4"/></g><rect x="67" y="5" width="1.6" height="4" rx=".8" fill="currentColor" opacity=".4"/></svg></div>
+  <section class="content rise">
+    <div>
+      <p class="eyebrow">Still Plus · optional</p>
+      <h1 class="title">Calm Start stays free. Plus opens up the rest.</h1>
+    </div>
+    <ul class="checks">
+      <li><svg class="i" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>400+ sessions for sleep, stress and focus</li>
+      <li><svg class="i" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Sleep stories and soundscapes</li>
+      <li><svg class="i" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Downloads for when you’re offline</li>
+    </ul>
+    <div class="options plans">
+      <div class="option is-selected"><span class="o-text"><span class="o-title">Yearly<span class="badge">7 days free</span></span><span class="o-sub">€59.99 a year, that’s €5.00 a month</span></span><span class="o-radio"></span></div>
+      <div class="option"><span class="o-text"><span class="o-title">Monthly</span><span class="o-sub">€9.99 a month, no free trial</span></span><span class="o-radio"></span></div>
+    </div>
+    <ol class="timeline" aria-label="How the trial works">
+      <li><b>Today</b>Full access, nothing to pay</li>
+      <li><b>Day 5</b>We remind you the trial ends soon</li>
+      <li><b>Day 7</b>€59.99 for the year, unless you cancel</li>
+    </ol>
+  </section>
+  <footer class="actions">
+    <button class="btn" data-adl-anchor="trial" data-adl-go="S15">Start 7-day free trial</button>
+    <button class="btn btn-ghost" data-adl-anchor="free" data-adl-go="S15">Continue with free plan</button>
+    <p class="fine">Cancel any time in Settings · <a>Restore purchase</a></p>
+  </footer>
+</main>
+</body>
+</html>
