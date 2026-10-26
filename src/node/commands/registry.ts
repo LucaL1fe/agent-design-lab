@@ -59,6 +59,7 @@ export const SWITCHES = new Set([
   'open',
   'peek',
   'quiet',
+  'restart',
   'sheet',
   'small',
   'snapshots',

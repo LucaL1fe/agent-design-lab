@@ -8,7 +8,7 @@ import './commands/index.ts';
 import { resolveWorkspace } from './paths.ts';
 import { findServer, startServer } from './server/server.ts';
 import { SnapshotService } from './snapshot/service.ts';
-import { readVersion } from './version.ts';
+import { codeChangedAt, readVersion, serverIsStale } from './version.ts';
 
 const HELP = `Agent Design Lab ${readVersion()}: a local canvas where Claude Code designs your app or website.
 
@@ -16,6 +16,7 @@ Usage:
   adl                      Open the canvas for this folder (starts the server if needed)
   adl open [folder]        Same, for another folder
   adl serve                Run the server without opening a browser
+  adl serve --restart      Stop the running server and start it again, so it loads changed code
   adl <command> --help     Help for a command
 
 Commands:
@@ -67,11 +68,42 @@ export function openBrowser(url: string) {
   p.unref();
 }
 
+/** Stop a running server (SIGTERM: it closes cleanly) and wait until its process is gone. */
+async function stopServer(e: { pid: number }): Promise<boolean> {
+  const alive = () => {
+    try {
+      process.kill(e.pid, 0);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  try {
+    process.kill(e.pid, 'SIGTERM');
+  } catch {
+    return !alive();
+  }
+  for (let i = 0; i < 80; i++) {
+    if (!alive()) return true;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return false;
+}
+
 async function serve(args: ReturnType<typeof parseArgs>, open: boolean) {
   const workspace =
     typeof args.workspace === 'string' ? args.workspace : typeof args._[1] === 'string' ? args._[1] : undefined;
   const ws = resolveWorkspace({ workspace });
-  const existing = findServer(ws.root);
+  const restart = args.restart === true;
+  let existing = findServer(ws.root);
+  if (existing && restart) {
+    if (!(await stopServer(existing))) {
+      console.error(`The running server (pid ${existing.pid}) did not stop.`);
+      process.exitCode = 1;
+      return;
+    }
+    existing = undefined;
+  }
   if (existing && (await health(existing.port))) {
     const url = `http://localhost:${existing.port}${typeof args.focus === 'string' ? `/#${args.focus}` : ''}`;
     if (open) {
@@ -87,7 +119,8 @@ async function serve(args: ReturnType<typeof parseArgs>, open: boolean) {
     console.log(`Agent Design Lab is running: ${url}`);
     return;
   }
-  if (args.background === true || (args.background !== false && !process.stdout.isTTY && open)) {
+  // without a terminal (an agent's shell) a restart goes to the background too, or the command would never return
+  if (args.background === true || (args.background !== false && !process.stdout.isTTY && (open || restart))) {
     const child = spawn(
       process.execPath,
       [
@@ -162,6 +195,11 @@ async function main() {
   const running = findServer(ws.root);
   let result: CommandResult;
   if (running && (await health(running.port))) {
+    if (serverIsStale(running.startedAt, codeChangedAt()))
+      console.error(
+        `Note: Agent Design Lab's code changed after the server for this folder started (pid ${running.pid}, ` +
+          `${running.startedAt}), so this command runs on the old code. Run \`adl serve --restart\` to load the new code.`,
+      );
     const r = await fetch(`http://127.0.0.1:${running.port}/api/cmd/${encodeURIComponent(cmd)}`, {
       method: 'POST',
       headers: { 'x-adl-token': running.token, 'content-type': 'application/json' },

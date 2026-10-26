@@ -6,6 +6,7 @@ describe('parseArgs', () => {
   it('a switch never swallows the next word: adl render --sheet S1 S2', () => {
     expect(parseArgs(['--sheet', 'S1', 'S2'])).toEqual({ _: ['S1', 'S2'], sheet: true });
     expect(parseArgs(['S1', '--entry', 'S2'])).toEqual({ _: ['S1', 'S2'], entry: true });
+    expect(parseArgs(['--restart', 'folder'])).toEqual({ _: ['folder'], restart: true });
   });
   it('other flags take the next word as their value, repeated flags collect', () => {
     expect(parseArgs(['S2', 'S3', '--after', 'S1', '--chain', '--label', 'Go', '--label', 'Next'])).toEqual({
