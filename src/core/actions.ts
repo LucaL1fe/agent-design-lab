@@ -576,9 +576,16 @@ export function pickProposal(
   return { ops: tx.ops, replaced: targetId, archived: [targetId, ...siblings] };
 }
 
-export function rejectProposal(docs: Docs, page: string, proposalId: Id, actor: Actor, note?: string): SetOp[] {
+export function rejectProposal(
+  docs: Docs,
+  page: string,
+  proposalIds: Id | readonly Id[],
+  actor: Actor,
+  note?: string,
+): SetOp[] {
   const tx = new Tx(docs);
-  archiveItems(tx, page, [proposalId], 'rejected', actor, note ? { note } : {});
+  const ids = typeof proposalIds === 'string' ? [proposalIds] : [...proposalIds];
+  archiveItems(tx, page, ids, 'rejected', actor, note ? { note } : {});
   return tx.ops;
 }
 

@@ -172,6 +172,21 @@ describe('commands without a server', () => {
     expect(page().arrows['H2a>H2b']).toMatchObject({ label: 'option B', style: 'proposal' });
   });
 
+  it('reject sends every proposal it is given to History; pick refuses a second id instead of ignoring it', async () => {
+    expect((await run('add', ['H3a', 'H3b', '--after', 'H3', '--style', 'proposal'], pdir)).ok).toBe(true);
+    const many = await run('pick', ['H3a', 'H3b'], pdir);
+    expect(many.ok).toBe(false);
+    expect(page().items.H3).toBeDefined();
+    // regression: only the first id was rejected, the second stayed on the page without a word
+    const r = await run('reject', ['H3a', 'H3b'], pdir);
+    expect(r.text).toBe('H3a, H3b are on the History page');
+    expect(page().items.H3a).toBeUndefined();
+    expect(page().items.H3b).toBeUndefined();
+    expect(page().items.H3).toBeDefined();
+    expect((await run('history', [], pdir)).text).toMatch(/H3b {2}rejected/);
+    expect((await run('reject', ['H9z'], pdir)).ok).toBe(false);
+  });
+
   it('validate, show and context', async () => {
     const v = await run('validate', [], pdir);
     expect(v.text).toMatch(/^ok · 5 screens · 4 arrows · 1 problem\n/);

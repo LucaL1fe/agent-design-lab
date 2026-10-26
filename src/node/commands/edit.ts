@@ -513,6 +513,10 @@ register({
     withEdit(args, ctx, (s) => {
       const id = args._[0];
       if (!id) throw new CommandError('Usage: adl pick <proposal-id>');
+      if (args._.length > 1)
+        throw new CommandError(
+          `Pick one proposal at a time (got ${args._.join(', ')}): the others go to History with it`,
+        );
       const page = str(args.page) ? s.page : requireItem(s.docs, id, s.page).page;
       const r = pickProposal(s.docs, page, id, s.actor);
       s.apply(r.ops, `${s.who} used ${id} instead of ${r.replaced}`);
@@ -527,14 +531,15 @@ register({
 register({
   name: 'reject',
   summary: 'Reject a proposal (it moves to the History page; restore it from there)',
-  usage: 'adl reject <proposal-id> [--note "why"] [--page <id>]',
+  usage: 'adl reject <proposal-id>... [--note "why"] [--page <id>]',
   run: (args, ctx) =>
     withEdit(args, ctx, (s) => {
-      const id = args._[0];
-      if (!id) throw new CommandError('Usage: adl reject <proposal-id>');
-      const page = str(args.page) ? s.page : requireItem(s.docs, id, s.page).page;
-      s.apply(rejectProposal(s.docs, page, id, s.actor, str(args.note)), `Rejected ${id}`);
-      return { ok: true, text: `${id} is on the History page` };
+      const ids = args._;
+      if (!ids.length) throw new CommandError('Usage: adl reject <proposal-id>...');
+      const page = str(args.page) ? s.page : requireItem(s.docs, ids[0]!, s.page).page;
+      for (const id of ids) if (!s.docs.pages[page]!.items[id]) throw new CommandError(`"${id}" is not on "${page}"`);
+      s.apply(rejectProposal(s.docs, page, ids, s.actor, str(args.note)), `Rejected ${ids.join(', ')}`);
+      return { ok: true, text: `${ids.join(', ')} ${ids.length > 1 ? 'are' : 'is'} on the History page` };
     }),
 });
 
