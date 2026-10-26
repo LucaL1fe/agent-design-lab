@@ -36,6 +36,10 @@ says (usually `npx adl` or `npx agent-design-lab`). Every command takes `--json`
    `adl add S1 --entry`, `adl add S2 S3 S4 --after S1 --chain --label "Get started" --label "Continue" ...`.
    Include the states real products need: empty, loading, error, offline, permission asked/denied, success, and the
    first-run versus returning version where it differs. Group flows into sections (`adl section "Onboarding" S1 S2 S3`).
+   Lay a flow out the way the person lives it, left to right: what happens outside the product (a message or email, the
+   phone's camera, a website, an app store, a system dialog) sits left of the screens it leads into, never under them or
+   after them. A flow that starts outside is an entry (`--entry`) and the leftmost screen of its row; when a section mixes
+   both, give the outside part its own columns on the left and label them ("Outside the app", "In the app").
    When a flow continues in another section or page, end it in a portal instead of a long arrow
    (`adl portal --to H1 --after S9 --label "Done"`).
    Every navigation arrow gets a label saying what the person taps or what condition sends them there, plus a trigger
