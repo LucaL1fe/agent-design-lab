@@ -22,6 +22,7 @@ import {
 import { isValidId } from '../../core/ids.ts';
 import { clone } from '../../core/json.ts';
 import { diffDoc, pageKey } from '../../core/ops.ts';
+import { issuesOf, PageSchema, ProjectSchema } from '../../core/schema.ts';
 import { arrowStylesOf, statusesOf } from '../../core/status.ts';
 import type { Arrow, Id, Item, NoteColor, PageDoc, ScreenItem, StatusDef, Trigger } from '../../core/types.ts';
 import { writeAtomic } from '../fsutil.ts';
@@ -458,6 +459,26 @@ register({
       const before = isProject ? s.docs.project : s.docs.pages[target]!;
       const after = mergePatch(clone(before), patch) as Record<string, unknown>;
       after.rev = before.rev;
+      // Files are schema-checked when they are read, edits made here were not: a patch for an id that is not on the
+      // page (say, removed a moment ago) made a bare item without a kind, and the page then no longer loaded.
+      if (!isProject) {
+        const was = (before as PageDoc).items;
+        const now = (after.items ?? {}) as Record<string, Record<string, unknown>>;
+        const added = Object.keys(now).filter((id) => !was[id] && !now[id]?.kind);
+        if (added.length)
+          throw new CommandError(
+            `${list(added)} ${added.length === 1 ? 'is' : 'are'} not on page "${target}": a new item needs a "kind" ` +
+              '(screen, section, note, text, portal or image). Nothing was changed.',
+          );
+      }
+      const v = (isProject ? ProjectSchema : PageSchema).safeParse(after);
+      if (!v.success) {
+        const first = issuesOf(v.error)[0];
+        throw new CommandError(
+          `The patch would leave ${isProject ? 'project.json' : `page "${target}"`} invalid ` +
+            `(${first?.path || '(root)'}: ${first?.message}). Nothing was changed.`,
+        );
+      }
       const ops = diffDoc(key, before, after);
       s.apply(ops, `${s.who} patched ${isProject ? 'project.json' : `page “${target}”`}`);
       return { ok: true, text: `${plural(ops.length, 'change')} to ${isProject ? 'project.json' : target}` };

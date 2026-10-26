@@ -130,6 +130,20 @@ describe('commands without a server', () => {
     expect(page().items.H1).toMatchObject({ title: 'Today' });
     expect(page().items.H1.entry).toBeUndefined();
     expect((await run('patch', ['truth', '{oops'], pdir)).text).toContain('not valid JSON');
+    // an id that is not on the page (removed a moment ago) must not come back as a bare item without a kind
+    const ghost = await run('patch', ['truth', '{"items":{"GONE":{"x":10,"y":20}}}'], pdir);
+    expect(ghost.ok).toBe(false);
+    expect(ghost.text).toContain('GONE is not on page "truth": a new item needs a "kind"');
+    expect(page().items.GONE).toBeUndefined();
+    // and nothing else that breaks the schema gets saved either
+    const bad = await run('patch', ['truth', '{"items":{"H1":{"kind":"wobble"}}}'], pdir);
+    expect(bad.ok).toBe(false);
+    expect(bad.text).toContain('would leave page "truth" invalid');
+    expect(page().items.H1.kind).toBe('screen');
+    // a new item with a kind is fine
+    expect(
+      (await run('patch', ['truth', '{"items":{"T9":{"kind":"text","x":0,"y":0,"text":"Hello"}}}'], pdir)).ok,
+    ).toBe(true);
   });
 
   it('portal: a box standing for a screen elsewhere, on this page or another one', async () => {
