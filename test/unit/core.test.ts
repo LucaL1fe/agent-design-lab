@@ -668,6 +668,7 @@ describe('how screens are reached (portals, completeness)', () => {
       B: { kind: 'screen' },
       C: { kind: 'screen', parent: 'sec' },
       D: { kind: 'screen' },
+      Ba: { kind: 'screen', proposalFor: 'B' },
       p1: { kind: 'portal', text: 'Settings\nopens C', target: 'C' },
       p2: { kind: 'portal', text: 'Nowhere' },
       p3: { kind: 'portal', text: 'The area', target: 'sec' },
@@ -698,7 +699,8 @@ describe('how screens are reached (portals, completeness)', () => {
     const ps = pages();
     const probs = validateRefs(d.project, ps);
     const codes = (code: string) => probs.filter((p) => p.code === code).map((p) => p.id);
-    expect(codes('unreached')).toEqual(['D']); // A is a start, B has an arrow, C is reached through portals
+    // A is a start, B has an arrow, C is reached through portals, Ba is an option for B (no arrow needed)
+    expect(codes('unreached')).toEqual(['D']);
     expect(codes('portal-no-target')).toEqual(['p2']);
     expect(codes('portal-not-screen')).toEqual(['p3']);
   });

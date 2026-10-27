@@ -168,8 +168,10 @@ export function validateRefs(project: ProjectDoc, pages: Record<string, PageDoc>
         }
       }
       // a screen nothing leads to: no arrow, no portal, not a start. Checked on the source-of-truth page, the spec
-      // that must be connected (other pages hold explorations and boards such as the design system)
-      if (it.kind === 'screen' && !it.archived && pid === truthPage && !it.entry) {
+      // that must be connected (other pages hold explorations and boards such as the design system). An option is
+      // reached through the screen it is an option for; it is not a step of the flow until it is picked
+      const option = it.kind === 'screen' && !!it.proposalFor && !!items[it.proposalFor];
+      if (it.kind === 'screen' && !it.archived && pid === truthPage && !it.entry && !option) {
         const arrowIn = Object.values(page.arrows ?? {}).some((a) => a.to === id && a.from !== id);
         if (!arrowIn && !reached.get(`${pid}/${id}`)?.length)
           out.push({
