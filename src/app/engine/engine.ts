@@ -13,7 +13,7 @@ import type { ProjectModel } from '../state/project.ts';
 import { beginFrame, image, onImageLoad, wasDeferred } from './images.ts';
 import { fetchSource, isPrepared, mountPrepared, prepare, setPaused, unmount } from './screenHost.ts';
 import { GridIndex } from './spatial.ts';
-import { type GesturePhase, stickyTitle, type View, Viewport } from './viewport.ts';
+import { type GesturePhase, keepInView, stickyTitle, type View, Viewport } from './viewport.ts';
 
 export const TIER_MOSAIC = 40; // below this on-screen width a screen is a sprite in the mosaic canvas
 export const TIER_LIVE_IN = 150; // at or above this it may run live (45 % zoom on a phone screen)
@@ -124,7 +124,7 @@ export class Engine {
     this.overlay.className = 'adl-overlay';
     root.appendChild(this.overlay);
     this.vp = new Viewport(root, this.world);
-    this.vp.bounds = () => this.contentBounds();
+    this.vp.items = () => this.rects.values();
     this.unsub.push(this.vp.on((v, phase) => this.onView(v, phase)));
     this.unsub.push(
       model.on((kind) => {
@@ -137,6 +137,7 @@ export class Engine {
 
   destroy() {
     cancelAnimationFrame(this.raf);
+    clearTimeout(this.lostT);
     for (const u of this.unsub) u();
     this.vp.destroy();
     this.root.replaceChildren();
@@ -198,6 +199,7 @@ export class Engine {
     if ((this.placementKey !== pl || this.dirtyStructure) && !this.preview) {
       this.placementKey = pl;
       this.rects = pl.rects;
+      this.checkLost();
       this.index.clear();
       for (const [id, r] of this.rects) {
         const it = page.items[id];
@@ -1004,6 +1006,21 @@ export class Engine {
       y2 = Math.max(y2, r.y + r.h);
     }
     return Number.isFinite(x1) ? { x: x1, y: y1, w: x2 - x1, h: y2 - y1 } : undefined;
+  }
+
+  private lostT = 0;
+  /** A view that shows none of the page (saved before the layout moved, or all it showed was deleted) goes to the
+   *  whole page once the layout has been still for a moment. Before, such a view was restored on every visit and the
+   *  canvas opened empty. */
+  checkLost() {
+    clearTimeout(this.lostT);
+    this.lostT = window.setTimeout(() => {
+      if (this.vp.phase !== 'idle') return this.checkLost();
+      const v = this.vp.v;
+      const W = this.root.clientWidth;
+      const H = this.root.clientHeight;
+      if (this.rects.size && keepInView(v, this.rects.values(), W, H, this.vp.insetTop, 1) !== v) this.fitAll(false);
+    }, 800);
   }
 
   fitAll(animate = true) {

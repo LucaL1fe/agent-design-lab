@@ -15,25 +15,36 @@ export const MIN_K = 0.01;
 export const MAX_K = 4;
 export const clampK = (k: number) => Math.min(MAX_K, Math.max(MIN_K, k));
 
-/** How much of the content (screen pixels per axis) always stays on screen. */
+/** How much of an item (screen pixels per axis, less for a smaller item) stays on screen at least. */
 export const KEEP_VISIBLE = 120;
 
-/** The view moved just enough that some of the content stays on screen. Panning has no other limit, and the view is
- *  saved and restored per page, so a fling at a far zoom used to leave the canvas empty on every visit. */
+/** The view, moved as little as possible so that at least one item stays on screen. Panning has no other limit, and
+ *  the view is saved and restored per page, so a fling at a far zoom used to leave the canvas empty on every visit.
+ *  Items, not their bounding box: on a page shaped like an L the corner of the box is empty. */
 export function keepInView(
   v: View,
-  content: Rect | undefined,
+  items: Iterable<Rect> | undefined,
   w: number,
   h: number,
   top = 0,
   keep = KEEP_VISIBLE,
 ): View {
-  if (!content || w <= 0 || h <= top) return v;
-  const mx = Math.min(keep, content.w * v.k, w / 2);
-  const my = Math.min(keep, content.h * v.k, (h - top) / 2);
-  const x = Math.min(w - mx - content.x * v.k, Math.max(mx - (content.x + content.w) * v.k, v.x));
-  const y = Math.min(h - my - content.y * v.k, Math.max(top + my - (content.y + content.h) * v.k, v.y));
-  return x === v.x && y === v.y ? v : { ...v, x, y };
+  if (!items || w <= 0 || h <= top) return v;
+  let best: View | undefined;
+  let far = Number.POSITIVE_INFINITY;
+  for (const r of items) {
+    const mx = Math.min(keep, r.w * v.k, w / 2);
+    const my = Math.min(keep, r.h * v.k, (h - top) / 2);
+    const x = Math.min(w - mx - r.x * v.k, Math.max(mx - (r.x + r.w) * v.k, v.x));
+    const y = Math.min(h - my - r.y * v.k, Math.max(top + my - (r.y + r.h) * v.k, v.y));
+    if (x === v.x && y === v.y) return v;
+    const d = Math.hypot(x - v.x, y - v.y);
+    if (d < far) {
+      far = d;
+      best = { ...v, x, y };
+    }
+  }
+  return best ?? v;
 }
 
 export type GesturePhase = 'idle' | 'active' | 'settling';
@@ -58,8 +69,8 @@ export class Viewport {
   insetTop = 64;
   /** Right inset (the side panel when it is open). */
   insetRight = 0;
-  /** What has to stay in view (the page's content, in world coordinates); unset: the view goes anywhere. */
-  bounds: (() => Rect | undefined) | undefined;
+  /** The items of which one has to stay in view (world coordinates); unset: the view goes anywhere. */
+  items: (() => Iterable<Rect>) | undefined;
   private reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   constructor(el: HTMLElement, world: HTMLElement) {
@@ -115,9 +126,14 @@ export class Viewport {
     return () => this.listeners.delete(fn);
   }
 
+  /** Input (pan, wheel, pinch, zoom keys) stops where one item would still be on screen. A view set in code (a saved
+   *  view, a fit, a render) is left alone: the layout can still move while the page loads. */
+  private hold() {
+    this.v = keepInView(this.v, this.items?.(), this.el.clientWidth, this.el.clientHeight, this.insetTop);
+  }
+
   /** Mark the view as changed; `gesture` keeps the phase active until input stops. */
   changed(gesture = true) {
-    this.v = keepInView(this.v, this.bounds?.(), this.el.clientWidth, this.el.clientHeight, this.insetTop);
     if (gesture) {
       this.phase = 'active';
       clearTimeout(this.settleT);
@@ -166,6 +182,7 @@ export class Viewport {
     const wx = (px - this.v.x) / this.v.k;
     const wy = (py - this.v.y) / this.v.k;
     this.v = { k: nk, x: px - wx * nk, y: py - wy * nk };
+    this.hold();
     this.changed(gesture);
   }
 
@@ -229,6 +246,7 @@ export class Viewport {
       dy = 0;
     }
     this.v = { ...this.v, x: this.v.x - dx, y: this.v.y - dy };
+    this.hold();
     this.changed();
   }
 
@@ -276,6 +294,7 @@ export class Viewport {
     }
     if (this.pan && e.pointerId === this.pan.id) {
       this.v = { ...this.v, x: this.pan.vx + (e.clientX - this.pan.x), y: this.pan.vy + (e.clientY - this.pan.y) };
+      this.hold();
       this.changed();
     }
   }

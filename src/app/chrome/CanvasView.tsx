@@ -127,8 +127,10 @@ export function CanvasView() {
         if (focus && engine.rects.has(focus)) {
           engine.fit([focus], false);
           app.set({ selection: [focus] });
-        } else if (saved && Number.isFinite(saved.k)) engine.vp.set(saved);
-        else engine.fitAll(false);
+        } else if (saved && Number.isFinite(saved.k)) {
+          engine.vp.set(saved);
+          engine.checkLost();
+        } else engine.fitAll(false);
         // renders (adl render --canvas) wait for this before setting their own view
         engine.root.dataset.viewReady = pageId;
       });
