@@ -1,6 +1,46 @@
 // Pure helpers of the canvas engine (no DOM).
 import { describe, expect, it } from 'vitest';
-import { stickyTitle } from '../../src/app/engine/viewport.ts';
+import { clampK, KEEP_VISIBLE, keepInView, stickyTitle } from '../../src/app/engine/viewport.ts';
+
+describe('keepInView', () => {
+  // a page of 35 000 × 46 000 in a 1400 × 800 window with a 64 px toolbar
+  const content = { x: 0, y: 0, w: 35000, h: 46000 };
+  const onScreen = (v: { x: number; y: number; k: number }) => ({
+    x1: content.x * v.k + v.x,
+    x2: (content.x + content.w) * v.k + v.x,
+    y1: content.y * v.k + v.y,
+    y2: (content.y + content.h) * v.k + v.y,
+  });
+  it('leaves a view that shows the content alone', () => {
+    const v = { x: 200, y: 100, k: 0.02 };
+    expect(keepInView(v, content, 1400, 800, 64)).toBe(v);
+  });
+  it('a fling at a far zoom stops with some of the content still on screen', () => {
+    // regression from a real canvas: x -4775 at 2 % put the whole page left of the window, saved and restored on
+    // every visit, so the canvas opened empty
+    for (const v of [
+      { x: -4775, y: -205, k: 0.02 },
+      { x: 90000, y: 0, k: 0.02 },
+      { x: 0, y: -99999, k: 0.5 },
+      { x: 0, y: 5000, k: 1 },
+    ]) {
+      const r = onScreen(keepInView(v, content, 1400, 800, 64));
+      expect(Math.min(r.x2, 1400) - Math.max(r.x1, 0)).toBeGreaterThanOrEqual(KEEP_VISIBLE - 0.001);
+      expect(Math.min(r.y2, 800) - Math.max(r.y1, 64)).toBeGreaterThanOrEqual(KEEP_VISIBLE - 0.001);
+    }
+  });
+  it('content smaller than the margin stays fully on screen; no content, no limit', () => {
+    const tiny = { x: 1000, y: 1000, w: 390, h: 844 };
+    const v = keepInView({ x: -9000, y: -9000, k: 0.1 }, tiny, 1400, 800, 64);
+    expect(tiny.x * v.k + v.x).toBeGreaterThanOrEqual(0);
+    expect(tiny.y * v.k + v.y).toBeGreaterThanOrEqual(64);
+    const free = { x: -9000, y: -9000, k: 0.1 };
+    expect(keepInView(free, undefined, 1400, 800, 64)).toBe(free);
+  });
+  it('the farthest zoom fits a page of a few hundred screens', () => {
+    expect(clampK((800 - 64 - 80) / 46000)).toBeCloseTo((800 - 64 - 80) / 46000);
+  });
+});
 
 describe('stickyTitle', () => {
   it('sits on the section when it is fully on screen', () => {

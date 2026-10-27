@@ -124,6 +124,7 @@ export class Engine {
     this.overlay.className = 'adl-overlay';
     root.appendChild(this.overlay);
     this.vp = new Viewport(root, this.world);
+    this.vp.bounds = () => this.contentBounds();
     this.unsub.push(this.vp.on((v, phase) => this.onView(v, phase)));
     this.unsub.push(
       model.on((kind) => {

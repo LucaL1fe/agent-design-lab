@@ -10,9 +10,31 @@ export interface View {
   k: number;
 }
 
-export const MIN_K = 0.02;
+// 1 %: "Zoom to fit" still fits a page of a few hundred screens (at 2 % one about 35 000 px wide did not)
+export const MIN_K = 0.01;
 export const MAX_K = 4;
 export const clampK = (k: number) => Math.min(MAX_K, Math.max(MIN_K, k));
+
+/** How much of the content (screen pixels per axis) always stays on screen. */
+export const KEEP_VISIBLE = 120;
+
+/** The view moved just enough that some of the content stays on screen. Panning has no other limit, and the view is
+ *  saved and restored per page, so a fling at a far zoom used to leave the canvas empty on every visit. */
+export function keepInView(
+  v: View,
+  content: Rect | undefined,
+  w: number,
+  h: number,
+  top = 0,
+  keep = KEEP_VISIBLE,
+): View {
+  if (!content || w <= 0 || h <= top) return v;
+  const mx = Math.min(keep, content.w * v.k, w / 2);
+  const my = Math.min(keep, content.h * v.k, (h - top) / 2);
+  const x = Math.min(w - mx - content.x * v.k, Math.max(mx - (content.x + content.w) * v.k, v.x));
+  const y = Math.min(h - my - content.y * v.k, Math.max(top + my - (content.y + content.h) * v.k, v.y));
+  return x === v.x && y === v.y ? v : { ...v, x, y };
+}
 
 export type GesturePhase = 'idle' | 'active' | 'settling';
 
@@ -36,6 +58,8 @@ export class Viewport {
   insetTop = 64;
   /** Right inset (the side panel when it is open). */
   insetRight = 0;
+  /** What has to stay in view (the page's content, in world coordinates); unset: the view goes anywhere. */
+  bounds: (() => Rect | undefined) | undefined;
   private reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   constructor(el: HTMLElement, world: HTMLElement) {
@@ -93,6 +117,7 @@ export class Viewport {
 
   /** Mark the view as changed; `gesture` keeps the phase active until input stops. */
   changed(gesture = true) {
+    this.v = keepInView(this.v, this.bounds?.(), this.el.clientWidth, this.el.clientHeight, this.insetTop);
     if (gesture) {
       this.phase = 'active';
       clearTimeout(this.settleT);
