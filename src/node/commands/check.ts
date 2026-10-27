@@ -1,9 +1,11 @@
 // Reading commands for the agent's loop: `validate` (is everything consistent?), `context` (what does the person see,
 // what did they change since my last look, what is waiting for me?) and `show` (everything about one screen).
+
 import fs from 'node:fs';
 import path from 'node:path';
 import postcss from 'postcss';
 import { HISTORY_PAGE } from '../../core/actions.ts';
+import { buildDef, flowsThrough } from '../../core/build.ts';
 import { portalsTo } from '../../core/reach.ts';
 import { arrowStylesOf, countStatuses, countsText, findStatus } from '../../core/status.ts';
 import type { Arrow, Item, NoteItem, PageDoc, ScreenItem } from '../../core/types.ts';
@@ -293,6 +295,14 @@ register({
           .filter(([, x]) => x.kind === 'screen' && x.proposalFor === id && !x.archived)
           .map(([x]) => x);
         if (proposals.length) lines.push(`proposals: ${proposals.join(', ')}`);
+        if (item.build) {
+          const caps = (item.build.captures ?? []).map((c) => `${c.device} ${c.kind} ${c.src}`);
+          lines.push(
+            `build: ${buildDef(item.build.state)?.label ?? item.build.state}${item.build.note ? ` · ${item.build.note}` : ''}${caps.length ? ` · ${caps.join(', ')}` : ' · no captures'}`,
+          );
+        }
+        const through = flowsThrough(page, id);
+        if (through.length) lines.push(`in flows: ${through.join(', ')}`);
         if (e?.compiled?.anchors.length) lines.push(`anchors: ${e.compiled.anchors.join(', ')}`);
         for (const w of e?.compiled?.warnings ?? []) lines.push(`warning: ${w}`);
         if (e?.error) lines.push(`error: ${e.error}`);

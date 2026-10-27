@@ -2,6 +2,7 @@
 import './basic.ts';
 import './project.ts';
 import './edit.ts';
+import './build.ts';
 import './check.ts';
 import './render.ts';
 import './handoff.ts';

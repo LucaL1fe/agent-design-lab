@@ -4,11 +4,12 @@
 //   big screens run live in Shadow DOM hosts, within a budget, mounted only when the view is still.
 // Sections, notes, texts, portals and images are light DOM; arrows are one SVG; section titles live in screen space.
 
+import { buildDef, countBuild, progressText, shownCapture } from '../../core/build.ts';
 import { resolveFrame } from '../../core/frames.ts';
 import { screenHeadHeight } from '../../core/layout.ts';
 import { headD, pathD, type Route, routeAll, trimEnd } from '../../core/route.ts';
 import { arrowStyle, countStatuses, countsText, findStatus, showsBanner, statusInk } from '../../core/status.ts';
-import type { Arrow, Id, Item, PageDoc, Rect } from '../../core/types.ts';
+import type { Arrow, Capture, Id, Item, PageDoc, Rect, ScreenItem } from '../../core/types.ts';
 import type { ProjectModel } from '../state/project.ts';
 import { beginFrame, image, onImageLoad, wasDeferred } from './images.ts';
 import { fetchSource, isPrepared, mountPrepared, prepare, setPaused, unmount } from './screenHost.ts';
@@ -35,6 +36,17 @@ interface ScreenNode {
   mounting?: boolean;
   imgSize?: number;
   key: string;
+  /** The real product's capture shown in a device view (an <img>, or a <video> while it plays). */
+  cap?: HTMLImageElement | HTMLVideoElement;
+  capKey?: string;
+}
+
+/** Videos that may play at once in a device view (decoding is the cost). */
+const VIDEO_BUDGET = 6;
+
+export function fileUrl(pid: string, src: string, version?: string): string {
+  const path = src.split('/').map(encodeURIComponent).join('/');
+  return `/api/p/${encodeURIComponent(pid)}/f/${path}${version ? `?v=${encodeURIComponent(version)}` : ''}`;
 }
 
 export interface EngineOptions {
@@ -81,6 +93,8 @@ export class Engine {
   private goodSince = performance.now();
   private frameTimes: number[] = [];
   animationsSetting: 'auto' | 'always' | 'never' = 'auto';
+  /** 'design', or a device ("phone", "tablet"): every screen then shows the real product's capture for it. */
+  appView = 'design';
   /** Section titles stick to the left edge while their section runs off-screen; a tiled capture turns that off, or
    *  every tile would pin its own copy of the title. */
   stickyTitles = true;
@@ -165,6 +179,13 @@ export class Engine {
     this.invalidate(true);
   }
 
+  setAppView(view: string) {
+    if (view === this.appView) return;
+    this.appView = view;
+    this.root.classList.toggle('app-view', view !== 'design');
+    this.invalidate(true);
+  }
+
   private dirtyStructure = true;
   invalidate(structure = true) {
     if (structure) this.dirtyStructure = true;
@@ -228,7 +249,8 @@ export class Engine {
     if (it.kind !== 'screen') return '';
     const meta = this.model.screenOf(id, it);
     const snap = this.model.snapOf(id, it);
-    return `${meta?.hash ?? '-'}|${snap?.url ?? '-'}|${it.status ?? ''}|${it.banner ?? ''}|${it.title ?? ''}|${meta?.title ?? ''}|${it.proposalFor ?? ''}`;
+    const cap = this.appView === 'design' ? undefined : shownCapture(it.build, this.appView);
+    return `${meta?.hash ?? '-'}|${snap?.url ?? '-'}|${it.status ?? ''}|${it.banner ?? ''}|${it.title ?? ''}|${meta?.title ?? ''}|${it.proposalFor ?? ''}|${it.build?.state ?? ''}|${this.appView}|${cap ? `${cap.src}@${cap.at ?? ''}` : ''}`;
   }
 
   // ---------- non-screen items ----------
@@ -278,7 +300,10 @@ export class Engine {
           this.sectionTitles.set(id, t);
         }
         t.querySelector('.t')!.textContent = it.title;
-        t.querySelector('.cnt')!.textContent = countsText(countStatuses(project, page, id));
+        const built = progressText(countBuild(page, id));
+        t.querySelector('.cnt')!.textContent = [countsText(countStatuses(project, page, id)), built]
+          .filter(Boolean)
+          .join(' · ');
       }
     }
     for (const [id, el] of this.others) {
@@ -455,6 +480,16 @@ export class Engine {
     n.head.replaceChildren();
     const cap = document.createElement('div');
     cap.className = 'cap';
+    if (it.build) {
+      // the build check: tied to the screen, next to its id
+      const def = buildDef(it.build.state);
+      const chip = document.createElement('span');
+      chip.className = `bld bld-${it.build.state}`;
+      chip.style.setProperty('--c', def?.color ?? '#7A7A73');
+      chip.textContent = def?.label ?? it.build.state;
+      if (it.build.note) chip.title = it.build.note;
+      cap.append(chip);
+    }
     const b = document.createElement('b');
     b.textContent = id;
     cap.append(b);
@@ -473,6 +508,11 @@ export class Engine {
       n.head.appendChild(ban);
     }
     n.el.classList.toggle('hasban', banner);
+    const appv = this.appView !== 'design';
+    n.el.classList.toggle('appv', appv);
+    n.el.classList.toggle('nocap', appv && !shownCapture(it.build, this.appView));
+    if (appv) n.frame.dataset.nocap = `No ${this.appView} capture yet`;
+    else delete n.frame.dataset.nocap;
     n.el.classList.toggle('proposal', !!it.proposalFor);
     const f = this.model.frameOf(id, it);
     const preset = resolveFrame(f.spec, project);
@@ -560,6 +600,7 @@ export class Engine {
         w >= (cur === 'live' ? TIER_LIVE_OUT : TIER_LIVE_IN) &&
         inStrict &&
         this.animationsSetting !== 'never' &&
+        this.appView === 'design' &&
         !!this.model.screenOf(id, it);
       if (liveOk) {
         const visibleFrac = overlapFrac(r, strict);
@@ -589,6 +630,7 @@ export class Engine {
     // apply: create/update nodes (bounded work while the view moves)
     let created = 0;
     let mounts = 0;
+    let videos = 0;
     const maxCreate = settled ? 400 : 24;
     for (const [id, tier] of want) {
       if (tier === 'mosaic') {
@@ -615,6 +657,11 @@ export class Engine {
       if (n.el.classList.contains('glow')) this.applyGlow(n, id);
       const r = this.rects.get(id)!;
       this.ensurePicture(n, id, it, r.w * v.k * dpr);
+      if (this.appView !== 'design' || n.cap) {
+        const big = r.w * v.k >= TIER_LIVE_IN && overlapFrac(r, strict) >= 0.25;
+        const play = big && videos < VIDEO_BUDGET && this.animationsSetting !== 'never';
+        if (this.syncCapture(n, it, r.w * v.k * dpr, play)) videos++;
+      }
       if (tier === 'live') {
         if (n.tier !== 'live' && settled && mounts < 2 && !n.mounting) {
           mounts++;
@@ -672,6 +719,52 @@ export class Engine {
     if (n.tier === 'live') this.demote(n);
     n.el.style.display = 'none';
     n.tier = 'mosaic';
+  }
+
+  /** Show (or drop) the real product's capture in a device view. Returns true when a video plays. */
+  private syncCapture(n: ScreenNode, it: ScreenItem, devW: number, play: boolean): boolean {
+    const c: Capture | undefined = this.appView === 'design' ? undefined : shownCapture(it.build, this.appView);
+    if (!c) {
+      if (n.cap) {
+        n.cap.remove();
+        delete n.cap;
+        delete n.capKey;
+      }
+      return false;
+    }
+    const video = c.kind === 'video' && play;
+    // far away a small picture is enough; close up the full one (the video's still until it plays)
+    const still = c.kind === 'video' ? (c.poster ?? c.thumb) : devW <= 260 && c.thumb ? c.thumb : c.src;
+    const key = `${video ? 'v' : 'i'}|${video ? c.src : (still ?? '')}|${c.at ?? ''}`;
+    if (n.capKey === key) return video;
+    n.cap?.remove();
+    delete n.cap;
+    const pid = this.model.id;
+    if (video) {
+      const el = document.createElement('video');
+      el.muted = true;
+      el.loop = true;
+      el.playsInline = true;
+      el.autoplay = true;
+      el.preload = 'auto';
+      if (c.poster) el.poster = fileUrl(pid, c.poster, c.at);
+      el.src = fileUrl(pid, c.src, c.at);
+      n.cap = el;
+    } else if (still) {
+      const el = document.createElement('img');
+      el.decoding = 'async';
+      el.draggable = false;
+      el.alt = '';
+      el.src = fileUrl(pid, still, c.at);
+      n.cap = el;
+    } else {
+      delete n.capKey;
+      return false;
+    }
+    n.cap.className = `capt${c.kind === 'video' ? ' is-video' : ''}`;
+    n.frame.appendChild(n.cap);
+    n.capKey = key;
+    return video;
   }
 
   private ensurePicture(n: ScreenNode, id: Id, it: Item, devW: number) {
@@ -772,7 +865,18 @@ export class Engine {
       if (!r || !it || it.kind !== 'screen') continue;
       const snap = this.model.snapOf(id, it);
       const devW = r.w * v.k * dpr;
-      if (devW < 16) {
+      const shot = this.appView === 'design' ? undefined : shownCapture(it.build, this.appView);
+      const shotImg = shot?.thumb ? image(fileUrl(this.model.id, shot.thumb, shot.at)) : undefined;
+      if (shot && devW >= 16) {
+        g.fillStyle = '#0b0b0b';
+        g.fillRect(r.x, r.y, r.w, r.h);
+        if (shotImg) {
+          const s = Math.min(r.w / shotImg.naturalWidth, r.h / shotImg.naturalHeight);
+          const w = shotImg.naturalWidth * s;
+          const h = shotImg.naturalHeight * s;
+          g.drawImage(shotImg, r.x + (r.w - w) / 2, r.y + (r.h - h) / 2, w, h);
+        }
+      } else if (devW < 16) {
         // a few pixels wide: its average colour says as much as a picture would, at no cost
         g.fillStyle = snap?.avg ?? '#262624';
         g.fillRect(r.x, r.y, r.w, r.h);
@@ -791,9 +895,15 @@ export class Engine {
         }
         g.restore();
       }
-      if (this.dim.has(id)) {
+      if (this.dim.has(id) || (this.appView !== 'design' && !shot)) {
         g.fillStyle = 'rgba(20,20,19,0.7)';
         g.fillRect(r.x, r.y, r.w, r.h);
+      }
+      if (it.build) {
+        // the build state as a strip under the screen, readable at any zoom
+        g.fillStyle = buildDef(it.build.state)?.color ?? '#7A7A73';
+        const bh = Math.max(12, 6 / v.k);
+        g.fillRect(r.x, r.y + r.h + 3 / v.k, r.w, bh);
       }
       if (showsBanner(project, it.status)) {
         const st = findStatus(project, it.status);

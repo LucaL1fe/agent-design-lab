@@ -337,10 +337,29 @@ export async function startServer(opts: ServerOptions = {}): Promise<RunningServ
         if (rel.split('/').some((seg) => seg.startsWith('.'))) return json(res, 404, { error: 'not found' });
         const file = safeJoin(st.dir, rel);
         if (!file || !fs.existsSync(file) || !fs.statSync(file).isFile()) return json(res, 404, { error: 'not found' });
-        res.writeHead(200, {
+        const size = fs.statSync(file).size;
+        const headers = {
           'content-type': mimeOf(file),
           'cache-control': url.searchParams.has('v') ? 'public, max-age=31536000, immutable' : 'no-cache',
-        });
+          'accept-ranges': 'bytes',
+        };
+        // videos seek with byte ranges (Safari refuses to play an mp4 without them)
+        const range = byteRange(req.headers.range, size);
+        if (range === 'bad') {
+          res.writeHead(416, { 'content-range': `bytes */${size}` });
+          res.end();
+          return;
+        }
+        if (range) {
+          res.writeHead(206, {
+            ...headers,
+            'content-range': `bytes ${range.start}-${range.end}/${size}`,
+            'content-length': String(range.end - range.start + 1),
+          });
+          fs.createReadStream(file, { start: range.start, end: range.end }).pipe(res);
+          return;
+        }
+        res.writeHead(200, { ...headers, 'content-length': String(size) });
         fs.createReadStream(file).pipe(res);
         return;
       }
@@ -531,4 +550,28 @@ async function openInEditor(file: string, reveal: boolean) {
   const cmd = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'explorer' : 'xdg-open';
   const args = process.platform === 'darwin' ? (reveal ? ['-R', file] : [file]) : [reveal ? path.dirname(file) : file];
   spawn(cmd, args, { detached: true, stdio: 'ignore' }).unref();
+}
+
+/** A single "bytes=a-b" range of a file of `size` bytes: undefined = the whole file, 'bad' = cannot be served. */
+export function byteRange(
+  header: string | undefined,
+  size: number,
+): { start: number; end: number } | undefined | 'bad' {
+  if (!header) return undefined;
+  const m = /^bytes=(\d*)-(\d*)$/.exec(header.trim());
+  if (!m || (!m[1] && !m[2])) return undefined; // several ranges or junk: send the whole file
+  let start: number;
+  let end: number;
+  if (!m[1]) {
+    // the last n bytes
+    const n = Number(m[2]);
+    if (n === 0) return 'bad';
+    start = Math.max(0, size - n);
+    end = size - 1;
+  } else {
+    start = Number(m[1]);
+    end = m[2] ? Math.min(Number(m[2]), size - 1) : size - 1;
+  }
+  if (start >= size || start > end) return 'bad';
+  return { start, end };
 }

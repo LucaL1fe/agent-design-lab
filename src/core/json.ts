@@ -20,6 +20,7 @@ const ITEM_ORDER = [
   'banner',
   'entry',
   'proposalFor',
+  'build',
   'anchor',
   'target',
   'by',
@@ -29,7 +30,8 @@ const ITEM_ORDER = [
 ];
 const ARROW_ORDER = ['from', 'to', 'label', 'style', 'trigger', 'fromEl', 'fromSide', 'toSide', 'waypoints'];
 const PAGE_ORDER = ['$schema', 'adl', 'rev', 'name', 'kind'];
-const PAGE_TAIL = ['items', 'arrows'];
+const PAGE_TAIL = ['items', 'arrows', 'flows'];
+const FLOW_ORDER = ['title', 'steps', 'build'];
 const PROJECT_ORDER = [
   '$schema',
   'adl',
@@ -118,6 +120,8 @@ export function stringifyPage(doc: Record<string, unknown>): string {
       );
       return `  "arrows": ${mapBlock(arrows, ARROW_ORDER, '  ', false)}`;
     }
+    if (k === 'flows')
+      return `  "flows": ${mapBlock((doc.flows ?? {}) as Record<string, unknown>, FLOW_ORDER, '  ', false)}`;
     return `  ${JSON.stringify(k)}: ${inline(doc[k])}`;
   });
   return '{\n' + parts.join(',\n') + '\n}\n';

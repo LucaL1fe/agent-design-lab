@@ -4,6 +4,7 @@ import {
   Copy,
   Hand,
   Hash,
+  ListChecks,
   MousePointer2,
   PanelRight,
   Play,
@@ -12,12 +13,14 @@ import {
 } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { HISTORY_PAGE } from '../../core/actions.ts';
+import { captureDevices, usesBuild } from '../../core/build.ts';
 import { boot, connection } from '../boot/connection.ts';
 import { Engine } from '../engine/engine.ts';
 import { Interaction } from '../engine/interact.ts';
 import { isTyping } from '../engine/viewport.ts';
-import { app, navigate, type Tool } from '../state/app.ts';
+import { app, navigate, setAppView, type Tool } from '../state/app.ts';
 import { useStore } from '../state/store.ts';
+import { CompareView } from './Compare.tsx';
 import { copy } from './Home.tsx';
 import { Inspector } from './Inspector.tsx';
 import { PageMenu } from './PageMenu.tsx';
@@ -138,6 +141,24 @@ export function CanvasView() {
     if (route.page !== pageId) navigate({ pid: project.id, page: pageId }, true);
   }, [engine, pageId, project.id, route.page]);
 
+  // the real product: a device view and a highlighted flow
+  const appView = useStore(app, (s) => s.appView);
+  const flowFocus = useStore(app, (s) => s.flowFocus);
+  const devices = page ? captureDevices(page) : [];
+  const tracked = page ? usesBuild(page) : false;
+  const view = devices.includes(appView) ? appView : 'design';
+  useEffect(() => {
+    engine?.setAppView(view);
+  }, [engine, view]);
+  useEffect(() => {
+    if (!engine) return;
+    const steps = flowFocus ? page?.flows?.[flowFocus]?.steps : undefined;
+    if (!steps) return;
+    engine.setSearch(steps, steps[0]);
+    engine.fit(steps.filter((id) => engine.rects.has(id)));
+    return () => engine.setSearch(undefined);
+  }, [engine, flowFocus, page]);
+
   useEffect(() => {
     if (!engine) return;
     engine.animationsSetting = animations;
@@ -185,6 +206,18 @@ export function CanvasView() {
         // ⌥I: the side panel (e.code, because ⌥I types "ˆ" on a Mac keyboard)
         e.preventDefault();
         app.set((s) => ({ panel: !s.panel }));
+      } else if (!mod && !e.altKey && e.key.toLowerCase() === 'c' && usesBuild(engine.page ?? { items: {} })) {
+        e.preventDefault();
+        app.set((s) => ({ compare: s.compare ? undefined : 'screens' }));
+      } else if (!mod && !e.altKey && e.key.toLowerCase() === 'd') {
+        const all = ['design', ...captureDevices(engine.page ?? { items: {} })];
+        if (all.length > 1) {
+          e.preventDefault();
+          const cur = all.indexOf(app.get().appView);
+          setAppView(all[(cur + 1) % all.length]!);
+        }
+      } else if (e.key === 'Escape' && app.get().flowFocus) {
+        app.set({ flowFocus: undefined });
       } else if (!mod && !e.altKey) {
         const t = TOOLS.find((x) => x.key.toLowerCase() === e.key.toLowerCase());
         if (t) app.set({ tool: t.id });
@@ -239,7 +272,38 @@ export function CanvasView() {
       {menu === 'page' ? <PageMenu pageId={pageId} /> : null}
       {engine ? <SearchPalette engine={engine} pageId={pageId} /> : null}
       {engine ? <PresentMode engine={engine} pageId={pageId} /> : null}
+      {engine ? <CompareView engine={engine} pageId={pageId} /> : null}
       <div className="rc" onPointerDown={(e) => e.stopPropagation()}>
+        {devices.length ? (
+          <fieldset className="viewsw" aria-label="Show the design or the real product" data-testid="view-switch">
+            {['design', ...devices].map((d) => (
+              <button
+                type="button"
+                key={d}
+                className={view === d ? 'on' : ''}
+                aria-pressed={view === d}
+                onClick={() => setAppView(d)}
+                title={d === 'design' ? 'The design (D cycles)' : `The real product on the ${d} (D cycles)`}
+              >
+                {d}
+              </button>
+            ))}
+          </fieldset>
+        ) : null}
+        {tracked ? (
+          <button
+            type="button"
+            className="tool"
+            aria-label="Compare (C)"
+            onClick={() => app.set((s) => ({ compare: s.compare ? undefined : 'screens' }))}
+            data-testid="compare-button"
+          >
+            <ListChecks size={18} strokeWidth={1.8} />
+            <span className="tip">
+              Compare with the real product<span className="kbd">C</span>
+            </span>
+          </button>
+        ) : null}
         <button
           type="button"
           className="tool"

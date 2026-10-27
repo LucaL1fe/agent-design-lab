@@ -123,6 +123,15 @@ Give the folder to the agent that builds the app ("here is the source of truth, 
 picture (structural similarity), looks for missing copy, taps every transition, and writes side-by-side pictures of
 what differs. The build is done when it passes.
 
+### Checking the real product against the design
+
+For products that are not web pages (a mobile app), the canvas keeps a build check next to the design. Every screen and
+flow gets a build state: not built, building, **matching**, deviating or blocked (the last two with a reason). Agents
+attach screenshots and recordings of the real product per device (`adl capture S4 phone shot.png`); the canvas switch
+**Design · tablet · phone** (key D) shows them in place of the screens, and **Compare** (key C) is a checklist with the
+design next to every capture, where the person changes states and writes why something deviates. Flows (`adl flow
+add`) get their own state and a video of the whole journey. A screen counts as done only when it is matching.
+
 ## Development
 
 See [docs/dev.md](docs/dev.md) and [CONTRIBUTING.md](CONTRIBUTING.md). `npm run check` runs the type checks, Biome and

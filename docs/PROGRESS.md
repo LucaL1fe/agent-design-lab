@@ -234,5 +234,25 @@ a test, no workaround in the project files.
 - Next: Wordfern (`examples/wordfern/brief.md`) designed with ADL becomes the default example; Still stays as "what one
   prompt produces".
 
+## Build check (2026-10-27)
+
+A product built from the design needs a checklist: which screens are built, which match, which deviate and why, with
+captures of the real product next to the design. Added as a separate build state per screen and per flow (not a
+design status: an approved screen can still be unbuilt).
+
+- Format: screen `build` `{state, note, by, at, captures[]}`, page `flows` `{title, steps, build}`; schema, canonical
+  order (build after the screen fields, flows after the arrows), validation (deviating/blocked need a note, flow steps
+  must be screens), `adl context` describes build changes and new captures.
+- CLI: `adl build` (set, `list`, `init`, `clear`), `adl capture` (copies into `captures/`, one per device and kind;
+  with ffmpeg a still for videos and a small picture; WebP only when the local ffmpeg has the encoder, else JPEG),
+  `adl flow` (add, set, rm, list); `adl show` lists the build state and flows.
+- Server: byte ranges (206) on project files, so videos seek and play in Safari.
+- App: build chip in each screen head, progress in section titles and the page panel, a strip under far sprites; the
+  Design · device switch (D) shows captures in place of the screens (videos play within a budget of 6, no live
+  design hosts in a device view); Compare (C) with filters, sections, design + captures side by side, state + reason
+  editing, a zoom view and a Flows tab whose crosshair highlights a flow on the canvas (Esc clears).
+- Tests: unit `test/unit/build.test.ts`, integration `test/integration/build.test.ts` (commands, ranges), e2e
+  `test/e2e/build.test.ts`.
+
 ## Open bugs
 (none known)

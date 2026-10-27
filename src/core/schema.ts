@@ -46,6 +46,30 @@ export const ProjectSchema = z.looseObject({
   snapshotAt: num.min(0).optional(),
 });
 
+export const CaptureSchema = z.looseObject({
+  device: z.string().min(1),
+  kind: z.enum(['image', 'video']),
+  src: z.string().min(1),
+  poster: z.string().optional(),
+  thumb: z.string().optional(),
+  label: z.string().optional(),
+  at: z.string().optional(),
+});
+
+export const BuildSchema = z.looseObject({
+  state: z.enum(['todo', 'wip', 'matching', 'deviating', 'blocked']),
+  note: z.string().optional(),
+  by: z.string().optional(),
+  at: z.string().optional(),
+  captures: z.array(CaptureSchema).optional(),
+});
+
+export const FlowSchema = z.looseObject({
+  title: z.string().min(1),
+  steps: z.array(z.string().min(1)),
+  build: BuildSchema.optional(),
+});
+
 const base = {
   x: num.optional(),
   y: num.optional(),
@@ -67,6 +91,7 @@ export const ItemSchema = z.discriminatedUnion('kind', [
     banner: z.string().optional(),
     entry: z.boolean().optional(),
     proposalFor: z.string().optional(),
+    build: BuildSchema.optional(),
   }),
   z.looseObject({
     kind: z.literal('section'),
@@ -137,6 +162,7 @@ export const PageSchema = z.looseObject({
   kind: z.enum(['canvas', 'history']).optional(),
   items: z.record(z.string(), ItemSchema).default({}),
   arrows: z.record(z.string(), ArrowSchema).default({}),
+  flows: z.record(z.string(), FlowSchema).optional(),
 });
 
 export const WorkspaceConfigSchema = z.looseObject({

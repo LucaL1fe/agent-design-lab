@@ -1,4 +1,5 @@
 export * from './actions.ts';
+export * from './build.ts';
 export * from './frames.ts';
 export * from './geom.ts';
 export * from './ids.ts';

@@ -70,6 +70,12 @@ pages; editing the JSON directly works too (the canvas merges your write with th
   (`human` or `agent`), `resolved`.
 - Arrows: `from`, `to`, `label`, `style` (`flow`, `new`, `proposal`, `loop`), `trigger` (`on`: tap, auto, condition,
   back, swipe, system; `el`: the `data-adl-anchor` tapped; `after`: ms for auto; `when`: a condition in words).
+- Build check (optional, per screen): `build` = `{"state": "todo|wip|matching|deviating|blocked", "note": "…",
+  "by": "agent", "at": "<ISO time>", "captures": [{"device": "phone", "kind": "image|video", "src":
+  "captures/S2/phone-image.webp", "poster": "…", "thumb": "…", "label": "…", "at": "…"}]}`. `deviating` and `blocked`
+  need a `note`. Separate from `status` (the design decision).
+- Flows (optional, per page): `"flows": {"signup": {"title": "Sign up", "steps": ["S1", "S2", "S3"], "build": {…}}}`,
+  a named path through the screens with its own build state and captures (a video of the whole flow).
 - The page `history` holds replaced, rejected and removed items with everything needed to restore them.
 
 ## screens/<id>.html

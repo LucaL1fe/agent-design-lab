@@ -1,9 +1,11 @@
 // Plain-language lines for what a transaction changed ("S4: Needs a fix: “button too small”", "moved S1, S2"), so an
 // agent reading `adl context` knows exactly what the person did since its last look.
+
+import { buildDef } from './build.ts';
 import { jsonEqual } from './json.ts';
 import { type Docs, pageIdOf, type SetOp } from './ops.ts';
 import { findStatus } from './status.ts';
-import type { Arrow, Item, PageDoc } from './types.ts';
+import type { Arrow, BuildInfo, Capture, Flow, Item, PageDoc } from './types.ts';
 
 const q = (s: string | undefined, max = 80) => `“${(s ?? '').length > max ? `${s!.slice(0, max - 1)}…` : (s ?? '')}”`;
 
@@ -46,6 +48,13 @@ export function describeChanges(before: Docs, after: Docs, ops: readonly SetOp[]
       if (op.path[0] === 'items' && !op.path[1]) for (const k of Object.keys(b.items)) ids.add(k);
     }
     for (const id of ids) describeItem(after, pid, id, a.items[id], b.items[id], where, out, moved, archivedNow);
+    const flows = new Set<string>();
+    for (const op of ops) {
+      if (op.doc !== `page:${pid}` || op.path[0] !== 'flows') continue;
+      if (op.path[1]) flows.add(op.path[1]);
+      else for (const k of Object.keys({ ...(a.flows ?? {}), ...(b.flows ?? {}) })) flows.add(k);
+    }
+    for (const id of flows) describeFlow(id, a.flows?.[id], b.flows?.[id], where, out);
     for (const id of arrows) describeArrow(a, b, id, a.arrows[id], b.arrows[id], where, out);
   }
   if (moved.length)
@@ -97,6 +106,7 @@ function describeItem(
     if (a.title !== b.title && b.title) out.push(`${id}: caption ${q(b.title)}`);
     if (a.frame !== b.frame) out.push(`${id}: frame ${b.frame ?? 'default'}`);
     if (a.entry !== b.entry && b.entry) out.push(`${id} is where the flow starts`);
+    describeBuild(id, a.build, b.build, out);
   }
   if ((a.kind === 'note' || a.kind === 'text') && (b.kind === 'note' || b.kind === 'text') && a.text !== b.text)
     out.push(`${b.kind} ${id}: ${q(b.text)}`);
@@ -148,4 +158,29 @@ function describeProject(before: Docs, after: Docs, out: string[]) {
     out.push(`the source of truth is now page ${b.sourceOfTruth}`);
   if (!jsonEqual(a.pages, b.pages) && a.pages.length === b.pages.length) out.push('reordered pages');
   if (a.name !== b.name) out.push(`renamed the project to ${q(b.name)}`);
+}
+
+function describeBuild(id: string, a: BuildInfo | undefined, b: BuildInfo | undefined, out: string[]) {
+  if (!b) {
+    if (a) out.push(`${id}: left the build check`);
+    return;
+  }
+  const label = (s: BuildInfo['state']) => buildDef(s)?.label ?? s;
+  if (a?.state !== b.state)
+    out.push(`${id}: build ${a ? `${label(a.state)} → ` : ''}${label(b.state)}${b.note ? `: ${q(b.note)}` : ''}`);
+  else if ((a?.note ?? '') !== (b.note ?? '')) out.push(`${id}: build note ${b.note ? q(b.note) : 'removed'}`);
+  const key = (c: Capture) => `${c.device}/${c.kind}/${c.src}/${c.at ?? ''}`;
+  const before = new Set((a?.captures ?? []).map(key));
+  const added = (b.captures ?? []).filter((c) => !before.has(key(c)));
+  for (const c of added) out.push(`${id}: new ${c.device} ${c.kind === 'video' ? 'recording' : 'screenshot'}`);
+}
+
+function describeFlow(id: string, a: Flow | undefined, b: Flow | undefined, where: string, out: string[]) {
+  if (!a && b) out.push(`new flow ${id} ${q(b.title)}${where} (${b.steps.length} steps)`);
+  else if (a && !b) out.push(`removed flow ${id}${where}`);
+  else if (a && b) {
+    if (a.title !== b.title) out.push(`flow ${id} renamed to ${q(b.title)}`);
+    if (!jsonEqual(a.steps, b.steps)) out.push(`flow ${id}: steps ${b.steps.join(' → ')}`);
+    describeBuild(`flow ${id}`, a.build, b.build, out);
+  }
 }

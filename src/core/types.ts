@@ -113,6 +113,8 @@ export interface ScreenItem extends ItemBase {
   entry?: boolean;
   /** This screen is a proposed replacement for another screen. */
   proposalFor?: Id;
+  /** How far the real product is: built yet, matching the design, captures of the real thing. */
+  build?: BuildInfo;
 }
 
 export interface SectionItem extends ItemBase {
@@ -199,6 +201,45 @@ export interface PageDoc {
   kind?: 'canvas' | 'history';
   items: Record<Id, Item>;
   arrows: Record<Id, Arrow>;
+  /** Named paths through the page's screens (a journey a person takes), each with its own build state. */
+  flows?: Record<Id, Flow>;
+  [extra: string]: unknown;
+}
+
+/** Does the real product match the design? Separate from the design status, which says whether the design is
+ *  decided. `deviating` and `blocked` carry the reason in `note`. */
+export type BuildState = 'todo' | 'wip' | 'matching' | 'deviating' | 'blocked';
+
+/** A screenshot or a recording of the real product, for one device (e.g. "phone", "tablet"). */
+export interface Capture {
+  device: string;
+  kind: 'image' | 'video';
+  /** Project-relative file, usually under captures/. */
+  src: string;
+  /** A still for a video (shown until it plays). */
+  poster?: string;
+  /** A small picture (about 256 px wide) for far zoom levels. */
+  thumb?: string;
+  label?: string;
+  at?: string;
+  [extra: string]: unknown;
+}
+
+export interface BuildInfo {
+  state: BuildState;
+  /** Why it deviates or is blocked; any remark otherwise. */
+  note?: string;
+  by?: Actor;
+  at?: string;
+  captures?: Capture[];
+  [extra: string]: unknown;
+}
+
+export interface Flow {
+  title: string;
+  /** Screen ids in the order a person goes through them. */
+  steps: Id[];
+  build?: BuildInfo;
   [extra: string]: unknown;
 }
 

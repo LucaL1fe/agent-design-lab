@@ -75,6 +75,29 @@ Default statuses: `approved` (no banner), `existing` ("Already built": the produ
 | `adl handoff --all` · `--status approved,existing` · `--page <id>` | Include every screen, or these statuses, or another page |
 | `adl handoff check --handoff <folder> [--routes adl-routes.json]` | Compare the built app with the handoff: each screen's picture (similarity ≥ 0.92) and copy, and every tap/auto transition |
 
+## Build check (the real product next to the design)
+
+Once the design is built, each screen and flow tracks whether the real product matches it: `todo` (not built or not
+checked), `wip` (being built), `matching` (done), `deviating` and `blocked` (both need a reason). This is separate
+from the design status. Captures (screenshots and recordings of the real product, per device) sit next to the design:
+the canvas switch **Design · tablet · phone** (key D) shows them in place of the screens, and **Compare** (key C) is
+the checklist where the person changes states and writes reasons.
+
+| Command | What it does |
+|---|---|
+| `adl build init [--section Onboarding]` | Put every screen (of the page or a section) in the check, state `todo` |
+| `adl build S4 matching` | The real product matches S4 (only `matching` counts as done) |
+| `adl build S4 deviating --note "the title wraps"` · `adl build S9 blocked --note "needs the payment provider"` | Built but different / can't be built now; the reason is required |
+| `adl build flow:signup wip` | The same for a flow |
+| `adl build list [--section s] [--state deviating]` | Progress per section and everything not matching yet (with reasons) |
+| `adl build clear S4` | Take a screen out of the check |
+| `adl capture S4 phone shot.png` · `adl capture S4 tablet tap.mp4` | A screenshot or recording of the real product, copied to `captures/`; one per device and kind, a new one replaces the old. With ffmpeg on the PATH a still and a small picture are made too |
+| `adl capture flow:signup phone signup.mp4` | A video of the whole flow |
+| `adl flow add signup "Sign up" S1 S2 S3` · `adl flow set …` · `adl flow rm signup` · `adl flow list` | Named paths through the screens (a journey), each with its own state and video |
+
+Rules: set `matching` only after looking at the capture next to the design; when something differs, fix it or say why
+with `deviating --note`. The person's changes to states and reasons show up in `adl context`.
+
 ## Setup and help
 
 | Command | What it does |

@@ -51,6 +51,29 @@ export interface AppState {
   editing?: { kind: 'label' | 'note' | 'text' | 'section' | 'banner' | 'portal'; id: Id } | undefined;
   hint?: string | undefined;
   animations: 'auto' | 'always' | 'never';
+  /** 'design', or a device: the canvas shows the real product's captures for that device instead of the design. */
+  appView: string;
+  /** The compare view (design next to the real product, the build checklist) is open on this tab. */
+  compare?: 'screens' | 'flows' | undefined;
+  /** A flow highlighted on the canvas (its screens stay bright, the rest dims). */
+  flowFocus?: Id | undefined;
+}
+
+function loadAppView(): string {
+  try {
+    return localStorage.getItem('adl:appView') || 'design';
+  } catch {
+    return 'design';
+  }
+}
+
+export function setAppView(view: string) {
+  app.set({ appView: view });
+  try {
+    localStorage.setItem('adl:appView', view);
+  } catch {
+    // private mode
+  }
 }
 
 function routeFromLocation(): Route {
@@ -91,6 +114,7 @@ export const app = new Store<AppState>({
   panel: loadPanel(),
   searchOpen: false,
   animations: loadAnimations(),
+  appView: loadAppView(),
 });
 
 let toastSeq = 0;
@@ -119,6 +143,8 @@ export function navigate(route: Route, replace = false) {
     searchOpen: false,
     presenting: undefined,
     editing: undefined,
+    compare: undefined,
+    flowFocus: undefined,
   });
 }
 

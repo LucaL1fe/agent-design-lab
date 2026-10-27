@@ -1,6 +1,7 @@
 // Structural checks over a whole project: schema problems, dangling references, unknown statuses and styles,
 // navigation arrows without a label. File-level checks (screen files, scripts, CSS lints) live in the node layer.
 
+import { NEEDS_NOTE } from './build.ts';
 import { portalIndex, portalTarget } from './reach.ts';
 import { issuesOf, PageSchema, ProjectSchema } from './schema.ts';
 import { arrowStylesOf, statusesOf } from './status.ts';
@@ -182,6 +183,46 @@ export function validateRefs(project: ProjectDoc, pages: Record<string, PageDoc>
             message: `${id}: nothing leads here (no arrow, no portal, not a start)`,
           });
       }
+    }
+    for (const [id, it] of Object.entries(items)) {
+      if (it.kind !== 'screen' || it.archived || !it.build) continue;
+      if (NEEDS_NOTE.has(it.build.state) && !it.build.note?.trim())
+        out.push({
+          level: 'warning',
+          code: 'build-needs-note',
+          page: pid,
+          id,
+          message: `${id}: "${it.build.state}" needs a reason (adl build ${id} ${it.build.state} --note "…")`,
+        });
+    }
+    for (const [fid, f] of Object.entries(page.flows ?? {})) {
+      for (const step of f.steps) {
+        const t = items[step];
+        if (!t || t.archived)
+          out.push({
+            level: 'warning',
+            code: 'flow-unknown-step',
+            page: pid,
+            id: fid,
+            message: `flow ${fid}: step "${step}" is not on this page`,
+          });
+        else if (t.kind !== 'screen')
+          out.push({
+            level: 'warning',
+            code: 'flow-step-not-screen',
+            page: pid,
+            id: fid,
+            message: `flow ${fid}: step "${step}" is a ${t.kind}, not a screen`,
+          });
+      }
+      if (f.build && NEEDS_NOTE.has(f.build.state) && !f.build.note?.trim())
+        out.push({
+          level: 'warning',
+          code: 'build-needs-note',
+          page: pid,
+          id: fid,
+          message: `flow ${fid}: "${f.build.state}" needs a reason (adl build flow:${fid} ${f.build.state} --note "…")`,
+        });
     }
     for (const [aid, a] of Object.entries(page.arrows ?? {})) {
       if (!items[a.from])

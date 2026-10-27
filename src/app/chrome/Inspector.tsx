@@ -13,6 +13,18 @@ import {
   updateArrow,
   updateStatusDef,
 } from '../../core/actions.ts';
+import {
+  BUILD_STATES,
+  buildCountsText,
+  buildDef,
+  countBuild,
+  countFlows,
+  flowsThrough,
+  NEEDS_NOTE,
+  progressText,
+  setBuild,
+  usesBuild,
+} from '../../core/build.ts';
 import { pageKey } from '../../core/ops.ts';
 import { portalsTo } from '../../core/reach.ts';
 import {
@@ -24,8 +36,9 @@ import {
   statusesOf,
   statusInk,
 } from '../../core/status.ts';
-import type { Arrow, Id, Item, NoteColor, ScreenItem, StatusDef } from '../../core/types.ts';
+import type { Arrow, BuildState, Id, Item, NoteColor, ScreenItem, StatusDef } from '../../core/types.ts';
 import { api } from '../boot/connection.ts';
+import { fileUrl } from '../engine/engine.ts';
 import { app, navigate, toast } from '../state/app.ts';
 import type { ProjectModel } from '../state/project.ts';
 import { useStore } from '../state/store.ts';
@@ -340,6 +353,7 @@ function ScreenPanel({
       >
         {approved ? '✓ Approved' : 'Approve'}
       </button>
+      <BuildBlock project={project} pageId={pageId} id={id} item={item} />
       <div className="lbl">Arrows</div>
       <div className="arw">
         {ins.length ? (
@@ -809,6 +823,24 @@ function PagePanel({ project, pageId }: { project: ProjectModel; pageId: string 
       </div>
       <div className="lbl">Screens</div>
       <div className="arw">{countsText(counts) || 'No screens yet'}</div>
+      {usesBuild(page) ? (
+        <>
+          <div className="lbl">Build check</div>
+          <div className="arw" data-testid="build-progress">
+            <div>
+              Screens: <b>{progressText(countBuild(page)) || '0 tracked'}</b> · {buildCountsText(countBuild(page))}
+            </div>
+            {Object.keys(page.flows ?? {}).length ? (
+              <div>
+                Flows: <b>{progressText(countFlows(page))}</b> · {buildCountsText(countFlows(page))}
+              </div>
+            ) : null}
+          </div>
+          <button type="button" className="btn-s" onClick={() => app.set({ compare: 'screens' })}>
+            Compare with the real product (C)
+          </button>
+        </>
+      ) : null}
       {pageId !== HISTORY_PAGE ? (
         <button
           type="button"
@@ -878,3 +910,100 @@ function ActivityList({ project }: { project: ProjectModel }) {
 }
 
 export { statusInk };
+
+/** The build check for one screen: its state, why it deviates, the captures of the real product. */
+function BuildBlock({
+  project,
+  pageId,
+  id,
+  item,
+}: {
+  project: ProjectModel;
+  pageId: string;
+  id: Id;
+  item: ScreenItem;
+}) {
+  const b = item.build;
+  const [note, setNote] = useState(b?.note ?? '');
+  useEffect(() => setNote(b?.note ?? ''), [b?.note, id]);
+  const page = project.docs.pages[pageId]!;
+  const flows = flowsThrough(page, id);
+  const apply = (state: BuildState, n: string | undefined) => {
+    if (NEEDS_NOTE.has(state) && !(n ?? b?.note)?.trim()) {
+      toast({ kind: 'warn', text: `${buildDef(state)!.label} needs a reason: write it below first` });
+      return;
+    }
+    project.apply(setBuild(project.docs, pageId, [id], state, n, 'human'), `${id}: build ${buildDef(state)!.label}`);
+  };
+  if (!b)
+    return (
+      <>
+        <div className="lbl">Build check</div>
+        <button type="button" className="btn-s" onClick={() => apply('todo', undefined)}>
+          Track how the real product matches it
+        </button>
+      </>
+    );
+  return (
+    <>
+      <div className="lbl">Build check</div>
+      <div className="bed-states" data-testid="build-states">
+        {BUILD_STATES.map((s) => (
+          <button
+            type="button"
+            key={s.id}
+            className={b.state === s.id ? 'on' : ''}
+            style={{ '--c': s.color } as React.CSSProperties}
+            onClick={() => apply(s.id, note.trim() !== (b.note ?? '') ? note.trim() : undefined)}
+            title={s.hint}
+            aria-pressed={b.state === s.id}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+      <textarea
+        className="ta"
+        rows={2}
+        value={note}
+        placeholder={NEEDS_NOTE.has(b.state) ? 'Why? (needed)' : 'Why it deviates, what is missing…'}
+        onChange={(e) => setNote(e.target.value)}
+        onBlur={() => note.trim() !== (b.note ?? '') && apply(b.state, note.trim())}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            (e.target as HTMLTextAreaElement).blur();
+          }
+        }}
+        data-testid="build-note"
+      />
+      {b.captures?.length ? (
+        <div className="caps">
+          {b.captures.map((c) => (
+            <a
+              key={`${c.device}-${c.kind}`}
+              href={fileUrl(project.id, c.src, c.at)}
+              target="_blank"
+              rel="noreferrer"
+              title={`${c.device} ${c.kind}`}
+            >
+              {c.kind === 'image' || c.poster || c.thumb ? (
+                <img
+                  alt=""
+                  src={fileUrl(project.id, c.kind === 'image' ? (c.thumb ?? c.src) : (c.poster ?? c.thumb)!, c.at)}
+                />
+              ) : null}
+              <span>
+                {c.device} · {c.kind === 'video' ? 'video' : 'still'}
+              </span>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <div className="arw">No captures of the real product yet</div>
+      )}
+      {flows.length ? <div className="arw">In flows: {flows.join(', ')}</div> : null}
+    </>
+  );
+}
