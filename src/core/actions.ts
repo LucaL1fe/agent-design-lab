@@ -730,7 +730,9 @@ function undoPick(tx: Tx, page: string, id: Id, back: Item, heirId: Id, handover
   tx.setItem(page, heirId, next);
 }
 
-/** Copy items to another position or page (screens keep pointing at the same HTML file). */
+/** Copy items to another position or page (screens keep pointing at the same HTML file). A section comes with
+ *  everything in it and an item with the notes hanging off it; those keep their places relative to it, only the
+ *  outermost copies move by dx, dy. */
 export function duplicateItems(
   docs: Docs,
   fromPage: string,
@@ -742,15 +744,28 @@ export function duplicateItems(
   const tx = new Tx(docs);
   const src = tx.page(fromPage);
   const idMap: Record<Id, Id> = {};
-  for (const id of ids) {
-    const it = src.items[id];
-    if (!it) continue;
+  const holder = (it: Item) => it.parent ?? (it.kind === 'note' ? it.anchor : undefined);
+  const copied = new Set(ids.filter((id) => src.items[id]));
+  for (let grew = true; grew; ) {
+    grew = false;
+    for (const [id, it] of Object.entries(src.items)) {
+      const up = holder(it);
+      if (!copied.has(id) && up !== undefined && copied.has(up)) {
+        copied.add(id);
+        grew = true;
+      }
+    }
+  }
+  for (const id of copied) {
+    const it = src.items[id]!;
     const copy = clone(it) as Item;
     delete copy.pinned;
     if (copy.kind === 'screen' && !copy.screen) copy.screen = id;
-    if (copy.x !== undefined) copy.x = Math.round(copy.x + dx);
-    if (copy.y !== undefined) copy.y = Math.round(copy.y + dy);
-    if (copy.parent && !tx.page(toPage).items[copy.parent] && !ids.includes(copy.parent)) delete copy.parent;
+    const up = holder(it);
+    const inside = up !== undefined && copied.has(up);
+    if (!inside && copy.x !== undefined) copy.x = Math.round(copy.x + dx);
+    if (!inside && copy.y !== undefined) copy.y = Math.round(copy.y + dy);
+    if (copy.parent && !tx.page(toPage).items[copy.parent] && !copied.has(copy.parent)) delete copy.parent;
     const nid = freeId(id, (x) => x in tx.page(toPage).items || Object.values(idMap).includes(x));
     idMap[id] = nid;
     tx.setItem(toPage, nid, copy);

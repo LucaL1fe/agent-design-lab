@@ -7,6 +7,7 @@ import {
   countStatuses,
   countsText,
   type Docs,
+  duplicateItems,
   HISTORY_PAGE,
   invertOps,
   jsonEqual,
@@ -625,6 +626,36 @@ describe('proposals and history', () => {
     expect(chain.items.S6c).toMatchObject({ proposalFor: 'S6' });
     expect(chain.arrows['S6>S6c']).toMatchObject({ label: 'option A', style: 'proposal' });
     expect(chain.arrows['S6a>S6c']).toBeUndefined();
+  });
+});
+
+describe('copy and duplicate', () => {
+  it('a duplicated section comes with what it holds, in the same places inside it', () => {
+    // regression from a real canvas: ⌘D on a section made an empty frame with the same title
+    const d = demo();
+    d.pages.truth!.items.n4 = { kind: 'note', text: 'check the price', anchor: 'S4', x: 0, y: 860 };
+    const r = duplicateItems(d, 'truth', 'truth', ['library'], 40, 40);
+    const t = applyOps(d, r.ops).docs.pages.truth!;
+    const lib = r.idMap.library!;
+    expect(t.items[lib]).toMatchObject({ kind: 'section', title: 'FLOW · Library', x: 40, y: 40, w: 1800, h: 1200 });
+    for (const id of ['S1', 'S4', 'S6', 'S6a', 'S6b']) {
+      const copy = t.items[r.idMap[id]!]!;
+      expect(copy).toMatchObject({ parent: lib, screen: id });
+      expect([copy.x, copy.y]).toEqual([d.pages.truth!.items[id]!.x, d.pages.truth!.items[id]!.y]);
+    }
+    expect(t.items[r.idMap.n4!]).toMatchObject({ anchor: r.idMap.S4, x: 0, y: 860 });
+    const arrows = Object.values(t.arrows).filter((a) => a.from === r.idMap.S1 || a.from === r.idMap.S4);
+    expect(arrows.map((a) => a.label).sort()).toEqual(['says no', 'taps 80']);
+    // the original is untouched
+    expect(t.items.S1).toMatchObject({ parent: 'library', x: 64, y: 150 });
+  });
+  it('a screen copied together with its note: the note moves with the screen, not twice', () => {
+    const d = demo();
+    d.pages.truth!.items.n4 = { kind: 'note', text: 'check the price', anchor: 'S4', x: 0, y: 860 };
+    const r = duplicateItems(d, 'truth', 'truth', ['S4', 'n4'], 40, 40);
+    const t = applyOps(d, r.ops).docs.pages.truth!;
+    expect(t.items[r.idMap.S4!]).toMatchObject({ x: 774, y: 190 });
+    expect(t.items[r.idMap.n4!]).toMatchObject({ anchor: r.idMap.S4, x: 0, y: 860 });
   });
 });
 
