@@ -10,6 +10,8 @@ import {
   Play,
   StickyNote,
   Type,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { HISTORY_PAGE } from '../../core/actions.ts';
@@ -17,8 +19,9 @@ import { captureDevices, usesBuild } from '../../core/build.ts';
 import { boot, connection } from '../boot/connection.ts';
 import { Engine } from '../engine/engine.ts';
 import { Interaction } from '../engine/interact.ts';
+import { player, SoundCues, soundUrls } from '../engine/sound.ts';
 import { isTyping } from '../engine/viewport.ts';
-import { app, navigate, setAppView, type Tool } from '../state/app.ts';
+import { app, navigate, setAppView, setVolume, type Tool } from '../state/app.ts';
 import { useStore } from '../state/store.ts';
 import { CompareView } from './Compare.tsx';
 import { copy } from './Home.tsx';
@@ -169,6 +172,49 @@ export function CanvasView() {
     engine.invalidate(false);
   }, [engine, animations, tool, panel]);
 
+  // sound: the one screen whose speaker is on plays its cues while it runs live; it starts over from the beginning
+  // each time it comes into view, so sound and motion start together
+  const sound = useStore(app, (s) => s.sound);
+  const volume = useStore(app, (s) => s.volume);
+  useEffect(() => player.setVolume(volume), [volume]);
+  useEffect(() => {
+    if (!engine) return;
+    engine.setAudible(sound);
+    if (!sound) {
+      player.stopAll();
+      return;
+    }
+    const cues = new SoundCues((url, el) => player.play(url, el));
+    let root: ShadowRoot | undefined;
+    let ready = false;
+    let raf = 0;
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      if (!engine.page?.items[sound] || engine.page.items[sound]!.archived) {
+        app.set({ sound: undefined });
+        return;
+      }
+      const r = engine.liveRoot(sound);
+      if (r !== root) {
+        root = r;
+        ready = false;
+        if (r)
+          void Promise.all(soundUrls(r).map((u) => player.load(u))).then(() => {
+            if (root !== r) return;
+            cues.startOver(r);
+            ready = true;
+          });
+      }
+      if (root && ready) cues.tick(root, now);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      engine.setAudible(undefined);
+      player.stopAll();
+    };
+  }, [engine, sound]);
+
   // the side panel opens only when the person opens it (button or ⌥I), and stays as they left it
   useEffect(() => {
     try {
@@ -289,6 +335,31 @@ export function CanvasView() {
               </button>
             ))}
           </fieldset>
+        ) : null}
+        {sound ? (
+          <div className="sndpill" data-testid="sound-pill">
+            <button type="button" className="go" title={`Go to ${sound}`} onClick={() => engine?.fit([sound])}>
+              <Volume2 size={16} strokeWidth={1.8} />
+              <b>{sound}</b>
+            </button>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={volume}
+              aria-label="Volume"
+              onChange={(e) => setVolume(Number(e.target.value))}
+            />
+            <button
+              type="button"
+              className="tool"
+              aria-label="Turn the sound off"
+              onClick={() => app.set({ sound: undefined })}
+            >
+              <VolumeX size={16} strokeWidth={1.8} />
+            </button>
+          </div>
         ) : null}
         {tracked ? (
           <button

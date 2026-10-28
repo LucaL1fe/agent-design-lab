@@ -304,6 +304,8 @@ register({
         const through = flowsThrough(page, id);
         if (through.length) lines.push(`in flows: ${through.join(', ')}`);
         if (e?.compiled?.anchors.length) lines.push(`anchors: ${e.compiled.anchors.join(', ')}`);
+        for (const x of e?.compiled?.sounds ?? [])
+          lines.push(`sound: ${x.src} on ${x.el}${x.at ? `, ${x.at} ms into its animation` : ''}`);
         for (const w of e?.compiled?.warnings ?? []) lines.push(`warning: ${w}`);
         if (e?.error) lines.push(`error: ${e.error}`);
       } else

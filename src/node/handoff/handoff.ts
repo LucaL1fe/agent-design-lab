@@ -39,6 +39,8 @@ export interface HandoffScreen {
   strings: string[];
   anchors: string[];
   animations: { selector: string; animation: string }[];
+  /** Files to play in time with an element's animation (in `source/`). */
+  sounds?: { file: string; el: string; at?: number }[];
   transitions: Transition[];
   from: { id: Id; label: string }[];
 }
@@ -202,6 +204,15 @@ export function buildSpec(
       strings: html ? stringsOf(html) : [],
       anchors: entry?.compiled?.anchors ?? [],
       animations: html ? animationsOf(html) : [],
+      ...(entry?.compiled?.sounds
+        ? {
+            sounds: entry.compiled.sounds.map((x) => ({
+              file: `source/${x.src}`,
+              el: x.el,
+              ...(x.at !== undefined ? { at: x.at } : {}),
+            })),
+          }
+        : {}),
       transitions: Object.values(page.arrows)
         .filter((a) => a.from === id && nav(a) && page.items[a.to])
         .map((a) => ({
@@ -280,6 +291,10 @@ export function handoffMarkdown(spec: Spec, cli: string): string {
   L.push(
     '6. Screens and notes listed under “Not in this handoff” are not approved yet: do not build them, and do not invent screens that are not here. When the design and the codebase disagree, ask.',
   );
+  if (spec.screens.some((s) => s.sounds?.length))
+    L.push(
+      '7. **Play the sounds** listed per screen (the files are in `source/`) in time with their element: when its animation starts, plus the given ms, and again each time it loops. An element without an animation plays its sound once, that long after the screen appears.',
+    );
   L.push('');
   // frames
   const frames = new Map<string, Id[]>();
@@ -352,6 +367,10 @@ export function handoffMarkdown(spec: Spec, cli: string): string {
       L.push(`Anchors (keep as \`data-adl-anchor\`): ${s.anchors.map((a) => `\`${a}\``).join(', ')}`);
     if (s.animations.length)
       L.push(`Animations: ${s.animations.map((a) => `\`${md(a.selector)}\` → \`${md(a.animation)}\``).join('; ')}`);
+    if (s.sounds?.length)
+      L.push(
+        `Sounds: ${s.sounds.map((x) => `\`${x.file}\` on \`${md(x.el)}\`${x.at ? ` (${x.at} ms into each round)` : ''}`).join('; ')}`,
+      );
     if (s.strings.length) L.push(`Copy, in reading order: ${s.strings.map((t) => `“${md(t)}”`).join(' · ')}`);
     L.push('');
   }
@@ -434,6 +453,15 @@ export const SPEC_SCHEMA = {
           strings: { type: 'array', items: { type: 'string' } },
           anchors: { type: 'array', items: { type: 'string' } },
           animations: { type: 'array' },
+          sounds: {
+            type: 'array',
+            description:
+              'files played in time with an element: each round of its animation, `at` ms into it (once after the screen appears when it has none)',
+            items: {
+              type: 'object',
+              properties: { file: { type: 'string' }, el: { type: 'string' }, at: { type: 'number' } },
+            },
+          },
           transitions: {
             type: 'array',
             items: {
@@ -483,6 +511,8 @@ export async function writeHandoff(
     if (fs.existsSync(from)) await fsp.cp(from, path.join(src, rel), { recursive: true });
   };
   for (const s of spec.screens) await copy(s.source.replace(/^source\//, ''));
+  for (const f of new Set(spec.screens.flatMap((s) => (s.sounds ?? []).map((x) => x.file))))
+    await copy(f.replace(/^source\//, ''));
   await copy('styles');
   await copy('assets');
   await copy('brief.md');

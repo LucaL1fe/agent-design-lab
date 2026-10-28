@@ -41,6 +41,9 @@ interface ScreenNode {
   capKey?: string;
 }
 
+const SPEAKER =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="w1" d="M15.5 8.5a5 5 0 0 1 0 7"/><path class="w2" d="M18.6 5.4a9.5 9.5 0 0 1 0 13.2"/><path class="x" d="m16 9 6 6m0-6-6 6"/></svg>';
+
 /** Videos that may play at once in a device view (decoding is the cost). */
 const VIDEO_BUDGET = 6;
 
@@ -86,6 +89,8 @@ export class Engine {
   dim = new Set<Id>();
   /** The screen with the search ring (⌘K's current result). */
   hit: Id | undefined;
+  /** The screen playing its sounds: it runs live whenever it is in view, even when small. */
+  audible: Id | undefined;
   private opts: EngineOptions;
   private visibleIds: Id[] = [];
   private lastFrame = 0;
@@ -480,6 +485,16 @@ export class Engine {
     n.head.replaceChildren();
     const cap = document.createElement('div');
     cap.className = 'cap';
+    if (meta?.sounds?.length) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'snd';
+      b.dataset.snd = id;
+      b.setAttribute('aria-label', `Play ${id} with sound`);
+      b.title = 'Sound: plays this screen with sound, every other screen stays quiet';
+      b.innerHTML = SPEAKER;
+      cap.append(b);
+    }
     if (it.build) {
       // the build check: tied to the screen, next to its id
       const def = buildDef(it.build.state);
@@ -508,6 +523,7 @@ export class Engine {
       n.head.appendChild(ban);
     }
     n.el.classList.toggle('hasban', banner);
+    n.el.classList.toggle('snd-on', this.audible === id);
     const appv = this.appView !== 'design';
     n.el.classList.toggle('appv', appv);
     n.el.classList.toggle('nocap', appv && !shownCapture(it.build, this.appView));
@@ -597,7 +613,7 @@ export class Engine {
         continue;
       }
       const liveOk =
-        w >= (cur === 'live' ? TIER_LIVE_OUT : TIER_LIVE_IN) &&
+        (w >= (cur === 'live' ? TIER_LIVE_OUT : TIER_LIVE_IN) || id === this.audible) &&
         inStrict &&
         this.animationsSetting !== 'never' &&
         this.appView === 'design' &&
@@ -612,7 +628,11 @@ export class Engine {
           const cost = 1 + (meta.cost.infinite > 20 ? 1 : 0) + (meta.cost.backdrop > 0 ? 1 : 0);
           liveCandidates.push({
             id,
-            prio: visibleFrac * (1 - dist) + (this.boost.has(id) ? 0.5 : 0) + (cur === 'live' ? 0.05 : 0),
+            prio:
+              visibleFrac * (1 - dist) +
+              (this.boost.has(id) ? 0.5 : 0) +
+              (id === this.audible ? 1 : 0) +
+              (cur === 'live' ? 0.05 : 0),
             cost,
           });
         }
@@ -823,6 +843,20 @@ export class Engine {
     n.tier = 'picture';
     n.el.classList.remove('live');
     if (n.host) setPaused(n.host, true);
+  }
+
+  /** The screen that plays its sounds (or none): its speaker lights up and it gets a live slot first. */
+  setAudible(id: Id | undefined) {
+    if (this.audible === id) return;
+    this.audible = id;
+    for (const n of this.screens.values()) n.el.classList.toggle('snd-on', n.id === id);
+    this.schedule();
+  }
+
+  /** The shadow root of a screen while it runs live (not a picture, not kept warm in the background). */
+  liveRoot(id: Id): ShadowRoot | undefined {
+    const n = this.screens.get(id);
+    return n?.tier === 'live' ? (n.host?.shadowRoot ?? undefined) : undefined;
   }
 
   /** Pause or resume every live screen (Settings → Animations, gestures under load). */

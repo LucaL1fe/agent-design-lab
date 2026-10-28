@@ -1,14 +1,16 @@
 // Present mode: walk the flow like a person using the product. The current screen runs live; its outgoing arrows
 // are the buttons (their labels), tappable elements with an arrow's anchor are hotspots, "auto" arrows advance by
 // themselves. → next · ← back · ↑↓ choose · Esc ends (and leaves the canvas on the last screen).
-import { Play, X } from 'lucide-react';
+import { Play, Volume2, VolumeX, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { arrowStylesOf } from '../../core/status.ts';
 import type { Arrow, Id, PageDoc, ScreenItem } from '../../core/types.ts';
 import type { Engine } from '../engine/engine.ts';
 import { fetchSource, mountPrepared, prepare, unmount } from '../engine/screenHost.ts';
+import { player, SoundCues, soundUrls } from '../engine/sound.ts';
 import { app } from '../state/app.ts';
 import type { ProjectModel } from '../state/project.ts';
+import { togglePresentSound } from '../state/sound.ts';
 import { useStore } from '../state/store.ts';
 
 interface Next {
@@ -101,6 +103,14 @@ function Presenting({
   const [scale, setScale] = useState(1);
   const meta = item ? project.screenOf(cur, item) : undefined;
   const frame = item ? project.frameOf(cur, item) : { w: 393, h: 852 as number | 'auto' };
+  const presentSound = useStore(app, (s) => s.presentSound);
+  const hasSounds = useMemo(
+    () =>
+      Object.entries(page.items).some(
+        ([id, it]) => it.kind === 'screen' && !it.archived && project.screenOf(id, it)?.sounds?.length,
+      ),
+    [page, project],
+  );
   const fh = frame.h === 'auto' ? (meta?.autoH ?? 1200) : frame.h;
 
   const go = (to: Id) => app.set({ presenting: { start: trail[0]!, trail: [...trail, to] } });
@@ -141,6 +151,7 @@ function Presenting({
       .then((p) => {
         if (cancelled) return;
         const root = mountPrepared(h, p);
+        if (app.get().presentSound) for (const u of soundUrls(root)) void player.load(u);
         const byEl = new Map(nexts.filter((n) => n.el).map((n) => [n.el!, n.to]));
         for (const el of root.querySelectorAll<HTMLElement>('[data-adl-anchor],[data-adl-go]')) {
           const to = byEl.get(el.dataset.adlAnchor ?? '') ?? el.dataset.adlGo;
@@ -167,6 +178,34 @@ function Presenting({
       unmount(h);
     };
   }, [meta?.hash, cur, nexts]);
+
+  // sound: each screen's cues play as its animations run (a screen mounts fresh, so they start together)
+  useEffect(() => {
+    const root = host.current?.shadowRoot;
+    if (!presentSound) {
+      player.stopAll();
+      return;
+    }
+    // turned on while a screen shows: it starts over once its sounds are loaded
+    const cues = new SoundCues((url, el) => player.play(url, el));
+    let ready = !root;
+    if (root)
+      void Promise.all(soundUrls(root).map((u) => player.load(u))).then(() => {
+        cues.startOver(root);
+        ready = true;
+      });
+    let raf = 0;
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      const r = host.current?.shadowRoot;
+      if (r && ready) cues.tick(r, now);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      player.stopAll();
+    };
+  }, [presentSound]);
 
   // the only "auto" arrow advances by itself
   const auto = nexts.length === 1 && nexts[0]!.after !== undefined ? nexts[0] : undefined;
@@ -208,6 +247,18 @@ function Presenting({
       <div className="pres-top">
         <Play size={16} />
         <b>Presenting {page.name}</b> from {trail[0]}
+        {hasSounds ? (
+          <button
+            type="button"
+            className={`snd${presentSound ? ' on' : ''}`}
+            onClick={togglePresentSound}
+            aria-pressed={presentSound}
+            data-testid="present-sound"
+          >
+            {presentSound ? <Volume2 size={16} /> : <VolumeX size={16} />}
+            {presentSound ? 'Sound on' : 'Sound off'}
+          </button>
+        ) : null}
         <button type="button" className="x" onClick={end} aria-label="End presenting">
           Esc <X size={16} />
         </button>

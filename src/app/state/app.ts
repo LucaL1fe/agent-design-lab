@@ -57,6 +57,12 @@ export interface AppState {
   compare?: 'screens' | 'flows' | undefined;
   /** A flow highlighted on the canvas (its screens stay bright, the rest dims). */
   flowFocus?: Id | undefined;
+  /** The one screen on the canvas that plays its sounds (off until the person turns it on). */
+  sound?: Id | undefined;
+  /** Present mode plays the screens' sounds. */
+  presentSound: boolean;
+  /** 0 to 1, remembered on this computer. */
+  volume: number;
 }
 
 function loadAppView(): string {
@@ -90,6 +96,24 @@ function routeFromLocation(): Route {
   };
 }
 
+function loadVolume(): number {
+  try {
+    const v = Number(localStorage.getItem('adl:volume') ?? '0.8');
+    return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0.8;
+  } catch {
+    return 0.8;
+  }
+}
+
+export function setVolume(v: number) {
+  app.set({ volume: v });
+  try {
+    localStorage.setItem('adl:volume', String(v));
+  } catch {
+    // private mode
+  }
+}
+
 function loadAnimations(): AppState['animations'] {
   try {
     const v = localStorage.getItem('adl:animations');
@@ -115,6 +139,8 @@ export const app = new Store<AppState>({
   searchOpen: false,
   animations: loadAnimations(),
   appView: loadAppView(),
+  presentSound: false,
+  volume: loadVolume(),
 });
 
 let toastSeq = 0;
@@ -145,10 +171,13 @@ export function navigate(route: Route, replace = false) {
     editing: undefined,
     compare: undefined,
     flowFocus: undefined,
+    sound: undefined,
   });
 }
 
-window.addEventListener('popstate', () => app.set({ route: routeFromLocation(), selection: [], arrowSel: [] }));
+window.addEventListener('popstate', () =>
+  app.set({ route: routeFromLocation(), selection: [], arrowSel: [], sound: undefined }),
+);
 
 export async function loadWorkspace() {
   try {

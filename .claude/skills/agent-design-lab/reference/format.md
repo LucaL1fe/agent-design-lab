@@ -116,3 +116,9 @@ pages; editing the JSON directly works too (the canvas merges your write with th
   every screen (validate warns about large per-screen CSS).
 - `data-adl-anchor="name"`: an element arrows can start from (`--trigger "tap name"`).
 - `data-adl-go="S7"`: a hotspot in present mode.
+- `data-adl-sound="../sounds/pop.mp3"`: a sound the element makes, in time with its CSS animation: when the animation
+  starts and again each time it loops. `data-adl-sound-at="400ms"` plays it that long into each round. An element
+  without an animation plays it once, that long after the screen starts. A sound longer than the round starts over
+  each round, like an app replaying one player. Files go in `sounds/` (mp3, wav, ogg, m4a,
+  aac, flac, opus or webm). The canvas is silent until the person clicks the screen's speaker (one screen plays at a
+  time; Present mode has its own switch); still pictures never play anything.

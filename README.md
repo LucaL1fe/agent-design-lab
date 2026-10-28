@@ -18,6 +18,8 @@ review it like a Figma file, and the approved design becomes **the source of tru
   tokens, copy, reference pictures), and `adl handoff check` tells the agent building the real app when it matches.
 - **Fast with hundreds of screens.** Animations keep running (CSS, exactly as written) on the screens you look at, and
   zoomed-out screens are drawn from cached pictures. 161 real screens open in about 0.3 s and pan at 60 fps.
+- **Sound, when you want it.** A screen can make sounds in time with its animations. The canvas stays silent until you
+  click a screen's speaker; then that one screen plays, every other stays quiet.
 - **Local files you own.** Plain HTML, CSS and JSON in your folder, git friendly. Nothing leaves your machine.
 
 ## Start
@@ -114,7 +116,7 @@ In a clone of this repo the command is `./adl`; in a project with the package in
 `adl handoff` writes `handoff/` next to the project:
 
 - `HANDOFF.md`: how to build it, the frames, the tokens, every flow with its transitions and triggers, and each
-  screen's requirements (from notes), anchors, animations and copy.
+  screen's requirements (from notes), anchors, animations, sounds and copy.
 - `spec.json` (with a JSON schema), `tokens.json` (W3C design tokens), `components.md`, `flows.mmd` (Mermaid).
 - `png/`: a reference picture per screen; `source/`: the design's HTML, CSS and assets.
 

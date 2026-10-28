@@ -448,6 +448,41 @@ svg.i {
   color: #ecece7;
   background: #4a4a46;
 }
+
+/* a screen with sounds: its speaker, off until clicked; one screen plays at a time */
+.it.scr .snd {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 26px;
+  margin-right: 8px;
+  vertical-align: -5px;
+  border-radius: 8px;
+  color: #a2a29b;
+  background: #2e2e2c;
+  cursor: pointer;
+}
+.it.scr .snd:hover {
+  color: var(--text);
+  background: #383835;
+}
+.it.scr .snd svg {
+  width: 18px;
+  height: 18px;
+}
+.it.scr .snd .w1,
+.it.scr .snd .w2,
+.it.scr.snd-on .snd .x {
+  display: none;
+}
+.it.scr.snd-on .snd .w1,
+.it.scr.snd-on .snd .w2 {
+  display: inline;
+}
+.it.scr.snd-on .snd {
+  color: #141413;
+  background: var(--yellow);
+}
 .it.scr .capt {
   position: absolute;
   inset: 0;
@@ -688,6 +723,30 @@ svg.i {
   background: var(--select-soft);
   color: var(--select);
 }
+.sndpill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 4px;
+  margin-right: 4px;
+  border-right: 1px solid var(--line);
+}
+.sndpill .go {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  color: var(--yellow);
+  font: 600 14px var(--ui);
+}
+.sndpill .go:hover {
+  background: var(--panel-2);
+}
+.sndpill input {
+  width: 84px;
+  accent-color: var(--yellow);
+}
 .rc .zm {
   display: flex;
   align-items: center;
@@ -757,6 +816,25 @@ svg.i {
 .pres-top b {
   color: var(--text);
   font-weight: 600;
+}
+.pres-top .snd {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--muted);
+  font: inherit;
+}
+.pres-top .snd:hover {
+  background: var(--panel-2);
+}
+.pres-top .snd.on {
+  color: var(--yellow);
+}
+.pres-top .snd + .x {
+  margin-left: 0;
 }
 .pres-top .x {
   margin-left: auto;
@@ -2020,6 +2098,18 @@ svg.i {
 }
 .insp .warns li.error {
   color: #ffb3ad;
+}
+.insp .snds {
+  margin: 0 0 10px;
+  padding-left: 16px;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+.insp .snds .mono {
+  color: var(--text);
 }
 .insp .activity {
   list-style: none;

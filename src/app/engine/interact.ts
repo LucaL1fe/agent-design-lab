@@ -22,6 +22,7 @@ import { arrowStylesOf } from '../../core/status.ts';
 import type { Arrow, Id, Item, NoteColor, Rect, Side } from '../../core/types.ts';
 import { api } from '../boot/connection.ts';
 import { app, navigate, toast } from '../state/app.ts';
+import { toggleScreenSound } from '../state/sound.ts';
 import { type Engine, HEAD_H } from './engine.ts';
 import { isTyping } from './viewport.ts';
 
@@ -70,6 +71,7 @@ export class Interaction {
     root.addEventListener('pointerleave', () => this.setHover(undefined), on);
     window.addEventListener('keydown', (ev) => this.key(ev), on);
     engine.overlay.addEventListener('click', (ev) => this.overlayClick(ev), on);
+    root.addEventListener('click', (ev) => this.speakerClick(ev), on);
     engine.hooks.add(() => this.draw());
     this.unsub.push(app.subscribe(() => this.onApp()));
     this.onApp();
@@ -144,6 +146,11 @@ export class Interaction {
       return;
     if (this.editor && this.editor.contains(ev.target as Node)) return;
     if (this.editor) this.closeEditor(true);
+    // a screen's speaker is a button: no selection, no drag (the click turns the sound on)
+    if ((ev.target as Element).closest?.('[data-snd]')) {
+      ev.preventDefault();
+      return;
+    }
     const tool = app.get().tool;
     const [wx, wy] = this.world(ev);
     const hit = this.hitAt(ev);
@@ -1177,6 +1184,7 @@ export class Interaction {
   // ---------- double click, overlay clicks, context menu ----------
 
   private dbl(ev: MouseEvent) {
+    if ((ev.target as Element).closest?.('[data-snd]')) return;
     const hit = this.hitAt(ev);
     if (hit.arrow) return this.editLabel(hit.arrow);
     if (hit.id) {
@@ -1203,6 +1211,13 @@ export class Interaction {
       this.select([id]);
       this.e.fit([id]);
     }
+  }
+
+  private speakerClick(ev: MouseEvent) {
+    const b = (ev.target as Element).closest?.('[data-snd]') as HTMLElement | null;
+    if (!b) return;
+    ev.stopPropagation();
+    toggleScreenSound(b.dataset.snd!);
   }
 
   private overlayClick(ev: MouseEvent) {

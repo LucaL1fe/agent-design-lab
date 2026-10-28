@@ -10,6 +10,7 @@ import { commands, parseArgs } from '../../src/node/commands/registry.ts';
 import '../../src/node/commands/index.ts';
 import { animationsOf, stringsOf } from '../../src/node/handoff/handoff.ts';
 import { parseTokens, toDtcg } from '../../src/node/handoff/tokens.ts';
+import { toneWav } from '../tools/wav.ts';
 
 const run = async (cmd: string, argv: string[], cwd: string) => {
   try {
@@ -48,10 +49,15 @@ beforeAll(async () => {
       '<p>2 sourdough loaves</p><a class="btn" data-adl-anchor="pay" href="S3.html">Pay 9.80 €</a>',
     ),
   );
-  // S3's look settles late (a block appears at 3 s): it sets its own still moment
+  // S3's look settles late (a block appears at 3 s): it sets its own still moment; the block chimes as it appears
+  fs.mkdirSync(path.join(pdir, 'sounds'));
+  fs.writeFileSync(path.join(pdir, 'sounds', 'chime.wav'), toneWav());
   fs.writeFileSync(
     path.join(pdir, 'screens', 'S3.html'),
-    screen('Thank you!', '<p>Pick it up tomorrow at 7.</p><div class="late"></div>')
+    screen(
+      'Thank you!',
+      '<p>Pick it up tomorrow at 7.</p><div class="late" data-adl-sound="../sounds/chime.wav" data-adl-sound-at="50ms"></div>',
+    )
       .replace('<title>', '<meta name="adl:snapshot" content="3500"><title>')
       .replace(
         '</style>',
@@ -140,6 +146,12 @@ describe('handoff', () => {
     expect(spec.screens[2].snapshotAt).toBe(3500);
     expect(spec.screens[0].snapshotAt).toBeUndefined();
     expect(md).toContain('animations frozen at 3500 ms');
+    // its sound: in the spec, in HANDOFF.md (with the rule for playing it), and the file next to the source
+    expect(spec.screens[2].sounds).toEqual([{ file: 'source/sounds/chime.wav', el: 'div.late', at: 50 }]);
+    expect(spec.screens[0].sounds).toBeUndefined();
+    expect(md).toContain('Sounds: `source/sounds/chime.wav` on `div.late` (50 ms into each round)');
+    expect(md).toContain('7. **Play the sounds**');
+    expect(fs.existsSync(path.join(h, 'source', 'sounds', 'chime.wav'))).toBe(true);
     const ref = PNG.sync.read(fs.readFileSync(path.join(h, 'png', 'S3.png')));
     let red = 0;
     for (let i = 0; i < ref.data.length; i += 4)

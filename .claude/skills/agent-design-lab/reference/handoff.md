@@ -18,7 +18,8 @@ spec another agent (or you, in the app's own repo) builds from, and a check that
 3. Build screen by screen in flow order. Open the reference PNG (`png/<id>.png`, 2x) and the source HTML
    (`source/screens/<id>.html`) side by side: the source has the exact values (spacing, radii, font sizes, colours,
    animation timings). Port its CSS rather than eyeballing the picture.
-4. Copy is exact: use the strings as written (they are listed per screen in reading order).
+4. Copy is exact: use the strings as written (they are listed per screen in reading order). Sounds listed per screen
+   play in time with their element's animation (the files are in `source/`).
 5. Put `data-adl-anchor="<name>"` on the elements named per screen (buttons, links, rows). Implement every transition
    with its trigger: tap, automatic after a delay, a condition.
 6. Notes on a screen are requirements. Screens under "Not in this handoff" are not approved: leave placeholders where

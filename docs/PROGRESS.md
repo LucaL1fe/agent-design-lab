@@ -254,5 +254,28 @@ design status: an approved screen can still be unbuilt).
 - Tests: unit `test/unit/build.test.ts`, integration `test/integration/build.test.ts` (commands, ranges), e2e
   `test/e2e/build.test.ts`.
 
+## Sound (2026-10-28)
+
+Screens can make sounds in time with their animations; the canvas stays silent until the person asks for it.
+
+- Format: `data-adl-sound` (an audio file in the project) and `data-adl-sound-at` (ms into each round) on any element.
+  The compiler resolves the file like an image (dependency, URL), turns the time into plain ms, lists `sounds` per
+  screen (only when there are any, so every other screen keeps its version and pictures) and warns about missing,
+  foreign or non-audio files and times it cannot read.
+- Timing: a cue follows the element's first CSS animation (or the first one inside it), read from the animation's own
+  timing every frame: one play per round, `at` ms into it, so pauses, loops with a built-in rest and restarts stay in
+  step; a finished animation holds its time and never repeats. Without an animation it plays once, `at` ms after the
+  screen starts. A cue found more than 300 ms late is skipped, not played out of step. A cue that comes round again
+  cuts its previous play (a sound longer than the loop starts over, as an app replays its one player).
+- Canvas: a speaker in the caption of screens with sounds, off by default. One screen plays at a time: it gets a live
+  slot first (even when small) and starts its animations over whenever it comes into view, so sound and motion begin
+  together. A pill at the top right goes to it, sets the volume and turns it off; the side panel lists the sounds.
+  Present mode has its own switch. Still pictures and renders never play anything.
+- Audio: one Web Audio context, started from the click (browsers need a gesture); decoded files cached; the volume
+  is squared (half the slider sounds about half as loud) and remembered in the browser.
+- Handoff: `sounds` per screen in spec.json and HANDOFF.md (with a rule on how they play); the files are copied into
+  `source/`. `adl show` lists them.
+- Tests: unit (compile, cue timing), integration (handoff), e2e `test/e2e/sound.test.ts` (counts the sounds started).
+
 ## Open bugs
 (none known)

@@ -1,4 +1,4 @@
-import { Check, ExternalLink, FolderOpen, Plus, RotateCcw, X } from 'lucide-react';
+import { Check, ExternalLink, FolderOpen, Plus, RotateCcw, Volume2, VolumeX, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import {
   addStatus,
@@ -41,6 +41,7 @@ import { api } from '../boot/connection.ts';
 import { fileUrl } from '../engine/engine.ts';
 import { app, navigate, toast } from '../state/app.ts';
 import type { ProjectModel } from '../state/project.ts';
+import { toggleScreenSound } from '../state/sound.ts';
 import { useStore } from '../state/store.ts';
 import { engineRef } from './CanvasView.tsx';
 import { agoText } from './TopBar.tsx';
@@ -264,6 +265,7 @@ function ScreenPanel({
   const [creating, setCreating] = useState(false);
   const [banner, setBanner] = useState(item.banner ?? '');
   useEffect(() => setBanner(item.banner ?? ''), [item.banner, id]);
+  const sound = useStore(app, (s) => s.sound);
   const page = project.docs.pages[pageId]!;
   const ins = Object.entries(page.arrows).filter(([, a]) => a.to === id && a.from !== id);
   const outs = Object.entries(page.arrows).filter(([, a]) => a.from === id);
@@ -404,6 +406,23 @@ function ScreenPanel({
           <div>No way out yet</div>
         )}
       </div>
+      {meta?.sounds?.length ? (
+        <>
+          <div className="lbl">Sounds</div>
+          <ul className="snds" data-testid="screen-sounds">
+            {meta.sounds.map((s) => (
+              <li key={`${s.src}|${s.el}|${s.at ?? 0}`}>
+                <span className="mono">{s.src.split('/').pop()}</span> on <span className="mono">{s.el}</span>
+                {s.at ? ` · ${s.at} ms into its animation` : ''}
+              </li>
+            ))}
+          </ul>
+          <button type="button" className="btn sm" onClick={() => toggleScreenSound(id)}>
+            {sound === id ? <VolumeX size={14} /> : <Volume2 size={14} />}
+            {sound === id ? 'Turn the sound off' : 'Play with sound'}
+          </button>
+        </>
+      ) : null}
       {meta && meta.warnings.filter(forPeople).length ? (
         <>
           <div className="lbl">Problems in this screen</div>

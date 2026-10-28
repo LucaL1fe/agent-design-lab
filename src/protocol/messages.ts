@@ -12,6 +12,8 @@ export interface ScreenMeta {
   frame?: string;
   anchors: string[];
   gos: { el?: string; to: string }[];
+  /** Files the screen plays in time with an element's animation (`data-adl-sound`), when it has any. */
+  sounds?: { src: string; el: string; at?: number }[];
   warnings: string[];
   cost: { keyframes: number; animations: number; infinite: number; backdrop: number; bytes: number };
   sheets: string[];
@@ -34,6 +36,7 @@ export interface CompiledScreenData {
   text: string;
   anchors: string[];
   gos: { el?: string; to: string }[];
+  sounds?: ScreenMeta['sounds'];
   deps: string[];
   cost: ScreenMeta['cost'];
   warnings: string[];

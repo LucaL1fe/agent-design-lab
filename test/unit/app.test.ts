@@ -1,5 +1,6 @@
 // Pure helpers of the canvas engine (no DOM).
 import { describe, expect, it } from 'vitest';
+import { cueTime, dueRound } from '../../src/app/engine/sound.ts';
 import { clampK, KEEP_VISIBLE, keepInView, stickyTitle } from '../../src/app/engine/viewport.ts';
 
 describe('keepInView', () => {
@@ -112,5 +113,34 @@ describe('search', async () => {
       'arrow:S4',
     ]);
     expect(hits.find((h: { id: string }) => h.id === 'B2')!.snippet![1]).toBe('songs');
+  });
+});
+
+describe('sound cues', () => {
+  it('a looping animation cues once per round, the given time into it', () => {
+    // 1 s rounds, endless, cue at 300 ms
+    expect(dueRound(0, 1000, Number.POSITIVE_INFINITY, 300)).toBe(-1);
+    expect(dueRound(299, 1000, Number.POSITIVE_INFINITY, 300)).toBe(-1);
+    expect(dueRound(300, 1000, Number.POSITIVE_INFINITY, 300)).toBe(0);
+    expect(dueRound(1299, 1000, Number.POSITIVE_INFINITY, 300)).toBe(0);
+    expect(dueRound(1300, 1000, Number.POSITIVE_INFINITY, 300)).toBe(1);
+    expect(cueTime(1, 1000, 300)).toBe(1300);
+  });
+
+  it('an animation that runs a few times cues that many times, never after it ends', () => {
+    expect(dueRound(5000, 1000, 2, 0)).toBe(1);
+    // the third round ends at 2.5 s, before its cue at 2.8 s
+    expect(dueRound(2500, 1000, 2.5, 800)).toBe(1);
+    expect(dueRound(2000, 1000, 2.5, 0)).toBe(2);
+    // a cue at the very end of a single round still plays
+    expect(dueRound(1000, 1000, 1, 1000)).toBe(0);
+    expect(dueRound(9000, 1000, 0, 0)).toBe(-1);
+  });
+
+  it('without an animation (or a 0 s one) the cue plays once, after its delay', () => {
+    expect(dueRound(100, Number.POSITIVE_INFINITY, 1, 500)).toBe(-1);
+    expect(dueRound(500, Number.POSITIVE_INFINITY, 1, 500)).toBe(0);
+    expect(dueRound(99999, 0, 1, 500)).toBe(0);
+    expect(cueTime(0, 0, 500)).toBe(500);
   });
 });

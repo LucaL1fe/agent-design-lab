@@ -185,3 +185,64 @@ describe('adl:snapshot', () => {
     expect(screen.warnings.join(' ')).toMatch(/adl:snapshot "late"/);
   });
 });
+
+describe('data-adl-sound', () => {
+  const sfiles: Record<string, string> = { 'sounds/chime.wav': 'RIFF', 'sounds/pop.mp3': 'ID3' };
+  const sctx = (): CompileContext => ({
+    ...ctx(),
+    readFile: (rel) => sfiles[rel],
+    fileHash: (rel) => (rel in sfiles ? String(sfiles[rel]!.length) : undefined),
+  });
+  const doc = (body: string) => `<!doctype html><html><head><title>X</title></head><body>${body}</body></html>`;
+
+  it('resolves each sound like an image, in document order, with its element and moment', () => {
+    const { screen } = compileScreen(
+      doc(
+        '<main><div class="card big" data-adl-sound="../sounds/chime.wav" data-adl-sound-at="0.4s"><span id="star" data-adl-sound="../sounds/pop.mp3"></span></div></main>' +
+          '<button data-adl-anchor="go" data-adl-sound="/sounds/pop.mp3" data-adl-sound-at="250ms">Go</button>',
+      ),
+      sctx(),
+    );
+    expect(screen.sounds).toEqual([
+      { src: 'sounds/chime.wav', el: 'div.card.big', at: 400 },
+      { src: 'sounds/pop.mp3', el: '#star' },
+      { src: 'sounds/pop.mp3', el: '[data-adl-anchor="go"]', at: 250 },
+    ]);
+    // the canvas reads a URL it can fetch and a plain number of milliseconds
+    expect(screen.body).toContain('data-adl-sound="/f/sounds/chime.wav"');
+    expect(screen.body).toContain('data-adl-sound-at="400"');
+    expect(screen.deps).toEqual(expect.arrayContaining(['sounds/chime.wav', 'sounds/pop.mp3']));
+    expect(screen.warnings).toEqual([]);
+  });
+
+  it('warns about missing, foreign and non-audio files and about times it cannot read', () => {
+    const { screen } = compileScreen(
+      doc(
+        '<i data-adl-sound="../sounds/gone.wav"></i><i data-adl-sound="https://example.com/a.mp3"></i>' +
+          '<i data-adl-sound="../assets/a.png"></i><i data-adl-sound=""></i>' +
+          '<i data-adl-sound="../sounds/pop.mp3" data-adl-sound-at="soon"></i><b data-adl-sound-at="1s"></b>',
+      ),
+      sctx(),
+    );
+    expect(screen.warnings).toEqual([
+      'Sound ../sounds/gone.wav not found',
+      'Sound https://example.com/a.mp3 is not a file in the project',
+      'Sound ../assets/a.png is not an audio file (mp3, wav, ogg, m4a, aac, flac, opus or webm)',
+      'data-adl-sound is empty',
+      'data-adl-sound-at "soon" is not a time (e.g. 400ms or 0.4s)',
+      'data-adl-sound-at without data-adl-sound on the same element',
+    ]);
+    // a missing file still counts (it plays once it is added); the others are dropped
+    expect(screen.sounds).toEqual([
+      { src: 'sounds/gone.wav', el: 'i' },
+      { src: 'sounds/pop.mp3', el: 'i' },
+    ]);
+    expect(screen.body).not.toContain('example.com');
+    expect(screen.body).not.toContain('soon');
+  });
+
+  it('leaves screens without sounds exactly as before (their versions and pictures stay)', () => {
+    const { screen } = compileScreen(doc('<main>Quiet</main>'), sctx());
+    expect('sounds' in screen).toBe(false);
+  });
+});

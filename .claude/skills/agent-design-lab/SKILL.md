@@ -87,6 +87,9 @@ stays usable for everyone and nothing waits for anyone:
 - Images and fonts go in `assets/` and are referenced relatively (`../assets/hero.webp`). Google Fonts `<link>`s work.
 - No `<script>`: it is removed. Interactions are shown with more screens and arrows, not with JavaScript.
 - `data-adl-go="S7"` on an element makes it a hotspot in present mode (clicking it walks to S7).
+- Sound: `data-adl-sound="../sounds/pop.mp3"` on the element whose animation makes it (it plays each round; add
+  `data-adl-sound-at="400ms"` for the moment inside the round). Use the product's real sound files, short and
+  normalised, in `sounds/`. The person hears them only after clicking that screen's speaker.
 - Do not edit anything under `.adl/` (cache and history). Prefer commands for pages; if you edit `pages/*.json`
   directly, keep it valid and keep the ids; your write is merged with the person's live edits.
 

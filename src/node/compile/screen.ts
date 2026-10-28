@@ -46,9 +46,20 @@ export interface CompiledScreen {
   text: string;
   anchors: string[];
   gos: { el?: string; to: string }[];
+  /** `data-adl-sound`: files played in time with their element's animation (only screens that have any). */
+  sounds?: ScreenSound[];
   deps: string[];
   cost: { keyframes: number; animations: number; infinite: number; backdrop: number; bytes: number };
   warnings: string[];
+}
+
+export interface ScreenSound {
+  /** Project-relative audio file. */
+  src: string;
+  /** The element that makes the sound: its anchor, id, or tag and classes. */
+  el: string;
+  /** Milliseconds into each round of the element's animation (into the screen when it has none). */
+  at?: number;
 }
 
 export interface CompileContext {
@@ -102,6 +113,7 @@ const URL_ATTRS = new Set([
   'longdesc',
   'srcset',
 ]);
+const AUDIO = /\.(mp3|wav|ogg|oga|opus|m4a|aac|flac|webm)$/i;
 const DANGEROUS_URL = /^\s*(javascript|vbscript|data:text\/html|data:application\/(x-)?javascript)/i;
 const KEEP_ROOT_ATTR = /^(class|id|lang|dir|style|data-[\w-]+|aria-[\w-]+|role|title)$/i;
 
@@ -261,6 +273,7 @@ export function compileScreen(html: string, ctx: CompileContext): { screen: Comp
     }
   };
   if (body) clean(body as unknown as ParentNode);
+  const sounds = body ? collectSounds(body, ctx, deps, warnings) : [];
   if (removed)
     warnings.push(
       `Removed ${removed} script${removed === 1 ? '' : 's'} or event handler${removed === 1 ? '' : 's'}: screens are HTML and CSS only`,
@@ -354,12 +367,73 @@ export function compileScreen(html: string, ctx: CompileContext): { screen: Comp
     text: searchText,
     anchors: [...anchors],
     gos,
+    ...(sounds.length ? { sounds } : {}),
     deps: [...deps],
     cost,
     warnings: lint(cost, local.css.length, warnings),
   };
   const hash = sha(JSON.stringify(out));
   return { screen: { ...out, hash }, sheets };
+}
+
+/** `data-adl-sound` and `data-adl-sound-at`, in document order: files resolved and rewritten like an image's src, times
+ * normalised to milliseconds, so the canvas only reads numbers and URLs. */
+function collectSounds(root: Node, ctx: CompileContext, deps: Set<string>, warnings: string[]): ScreenSound[] {
+  const out: ScreenSound[] = [];
+  const walk = (n: Node) => {
+    if (isEl(n)) {
+      const sound = n.attrs.find((a) => a.name === 'data-adl-sound');
+      const at = n.attrs.find((a) => a.name === 'data-adl-sound-at');
+      let ms: number | undefined;
+      if (at) {
+        ms = parseTime(at.value);
+        if (ms === undefined) {
+          warnings.push(`data-adl-sound-at "${at.value}" is not a time (e.g. 400ms or 0.4s)`);
+          n.attrs = n.attrs.filter((a) => a !== at);
+        } else if (!sound) warnings.push('data-adl-sound-at without data-adl-sound on the same element');
+        else at.value = String(ms);
+      }
+      if (sound) {
+        const value = sound.value.trim();
+        const rel = value ? resolveRel(ctx.file, value) : undefined;
+        if (!rel || !AUDIO.test(rel)) {
+          warnings.push(
+            !value
+              ? 'data-adl-sound is empty'
+              : !rel
+                ? `Sound ${value} is not a file in the project`
+                : `Sound ${value} is not an audio file (mp3, wav, ogg, m4a, aac, flac, opus or webm)`,
+          );
+          n.attrs = n.attrs.filter((a) => a !== sound);
+        } else {
+          if (ctx.fileHash(rel) === undefined) warnings.push(`Sound ${value} not found`);
+          deps.add(rel);
+          sound.value = ctx.fileUrl(rel);
+          out.push({ src: rel, el: elementLabel(n), ...(ms !== undefined ? { at: ms } : {}) });
+        }
+      }
+    }
+    for (const c of children(n)) walk(c);
+  };
+  walk(root);
+  return out;
+}
+
+/** "400", "400ms" or "0.4s" in milliseconds; undefined when it is not a time. */
+export function parseTime(v: string): number | undefined {
+  const m = /^\s*(\d+(?:\.\d+)?)\s*(ms|s)?\s*$/i.exec(v);
+  if (!m) return undefined;
+  return Math.round(Number(m[1]) * (m[2]?.toLowerCase() === 's' ? 1000 : 1));
+}
+
+/** How a person finds an element again: its anchor, else its id, else its tag and first classes. */
+function elementLabel(n: Element): string {
+  const anchor = attr(n, 'data-adl-anchor');
+  if (anchor) return `[data-adl-anchor="${anchor}"]`;
+  const id = attr(n, 'id');
+  if (id) return `#${id}`;
+  const classes = (attr(n, 'class') ?? '').split(/\s+/).filter(Boolean).slice(0, 2);
+  return n.tagName + classes.map((c) => `.${c}`).join('');
 }
 
 function depsKey(ctx: CompileContext, file: string): string {

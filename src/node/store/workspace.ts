@@ -35,6 +35,7 @@ export interface ScreenMeta {
   frame?: string;
   anchors: string[];
   gos: CompiledScreen['gos'];
+  sounds?: CompiledScreen['sounds'];
   warnings: string[];
   cost: CompiledScreen['cost'];
   sheets: string[];
@@ -437,6 +438,7 @@ export class WorkspaceService extends EventEmitter {
       ...(c.frame ? { frame: c.frame } : {}),
       anchors: c.anchors,
       gos: c.gos,
+      ...(c.sounds ? { sounds: c.sounds } : {}),
       warnings: c.warnings,
       cost: c.cost,
       sheets: c.sheets,
