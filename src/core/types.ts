@@ -82,6 +82,9 @@ export interface Handover {
   /** Arrows of the replaced screen that would only have repeated an arrow the pick already had between the same two
    *  screens (its own arrow and label win), kept as they would have been moved, so an undo puts them back. */
   merged?: { id: Id; arrow: Arrow }[];
+  /** Named flows whose steps named the replaced screen, with the step indexes that now name the pick, so an undo
+   *  hands exactly those steps back. */
+  flows?: { id: Id; steps: number[] }[];
 }
 
 interface ItemBase {

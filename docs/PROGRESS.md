@@ -117,6 +117,9 @@ every file parses and equals the server's state, the canvas equals the server.
 Luca's rule: a real app's wireflow is designed in ADL now, and every tool problem met along the way gets a real fix with
 a test, no workaround in the project files.
 - ⌘K search: the rest of the page stayed dimmed after a jump until Esc; dimming now shows only while the palette is open.
+- Pick: named flows (journeys) kept naming the screen a pick replaced, so validate warned "step is not on this page"
+  and the journey had a hole; a pick now moves those steps onto the picked screen, and restoring the original hands
+  exactly those steps back (recorded in the history handover).
 - validate: a rejected/replaced option on History keeps `proposalFor` (for restore) and was reported as a dangling
   proposal ("S6a: proposalFor "S6" does not exist on this page" after `adl reject`).
 - Router: explicit `fromSide: left` / `toSide: right` was ignored (always over the top); option links (style proposal)

@@ -550,6 +550,13 @@ function takePlace(tx: Tx, page: string, proposalId: Id, targetId: Id, siblings:
       handover.portals.push({ page: pid, id: iid });
     }
   }
+  // 4. named flows (journeys) that went through the original now go through the pick, at the same steps
+  for (const [fid, f] of Object.entries(tx.page(page).flows ?? {})) {
+    const at = f.steps.flatMap((s, i) => (s === targetId ? [i] : []));
+    if (!at.length) continue;
+    tx.set(pageKey(page), ['flows', fid, 'steps'], f.steps.map((s) => (s === targetId ? proposalId : s)));
+    handover.flows = [...(handover.flows ?? []), { id: fid, steps: at }];
+  }
   return handover;
 }
 
@@ -721,6 +728,12 @@ function undoPick(tx: Tx, page: string, id: Id, back: Item, heirId: Id, handover
     const t = portalTarget(ref.page, it.target);
     if (t.page !== page || t.id !== heirId) continue;
     tx.setItem(ref.page, ref.id, { ...it, target: ref.page === page ? id : `page:${page}/${id}` });
+  }
+  // the journeys' steps the pick took over name the restored screen again
+  for (const ref of handover?.flows ?? []) {
+    const f = tx.page(page).flows?.[ref.id];
+    if (!f) continue;
+    tx.set(pageKey(page), ['flows', ref.id, 'steps'], f.steps.map((s, i) => (ref.steps.includes(i) && s === heirId ? id : s)));
   }
   const next = { ...H, proposalFor: id } as ScreenItem;
   delete next.x;

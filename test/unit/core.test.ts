@@ -439,6 +439,18 @@ describe('proposals and history', () => {
     const back = applyOps(after, invertOps(r.ops)).docs;
     expect(jsonEqual(back, d)).toBe(true);
   });
+  it('a pick carries named flows over: a journey through the original walks through the pick, a restore hands it back', () => {
+    // regression from a real canvas: after picks, the journeys that went through the replaced screens still named
+    // them, so validate warned "step is not on this page" and the journey had a hole where the screen was
+    const d = demo();
+    d.pages.truth!.flows = { main: { title: 'Main', steps: ['S1', 'S4', 'S6'] }, other: { title: 'Other', steps: ['S1'] } };
+    const after = applyOps(d, pickProposal(d, 'truth', 'S6a', 'human').ops).docs;
+    expect(after.pages.truth!.flows!.main!.steps).toEqual(['S1', 'S4', 'S6a']);
+    expect(after.pages.truth!.flows!.other!.steps).toEqual(['S1']);
+    expect(after.pages[HISTORY_PAGE]!.items.S6?.archived?.handover?.flows).toEqual([{ id: 'main', steps: [2] }]);
+    const restored = applyOps(after, restoreFromHistory(after, 'S6').ops).docs;
+    expect(restored.pages.truth!.flows!.main!.steps).toEqual(['S1', 'S4', 'S6']);
+  });
   it('a pick does not repeat an arrow the option already has: its own arrow wins, an undo brings the other back', () => {
     // regression from a real canvas: a screen led to the original and to its option with two different labels; the
     // pick moved the original's arrow onto the option, so two arrows ran between the same two screens
