@@ -15,6 +15,28 @@ const RENDERER_VERSION = 5;
 const WIDTHS = [64, 128, 256];
 const MAX_W = 512;
 
+interface SnapOp {
+  path: readonly string[];
+  value?: unknown;
+}
+
+/** Whether a page or project change can need pictures that don't exist yet: a frame or the freeze time changed, an
+ *  item now shows another screen, or an item (or a whole page) arrived carrying its own frame. A screen added with
+ *  `--frame` used to get no picture at that size until its file changed again, so the canvas showed it empty. */
+export function opNeedsSnapshots(op: SnapOp): boolean {
+  const p = op.path;
+  if (p.includes('frame') || p[0] === 'frame' || p[0] === 'snapshotAt' || p[0] === 'presets') return true;
+  if (p[0] === 'items' && p[p.length - 1] === 'screen') return true;
+  return p.length <= 2 && carriesFrame(op.value, 3);
+}
+
+function carriesFrame(v: unknown, depth: number): boolean {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return false;
+  const o = v as Record<string, unknown>;
+  if (typeof o.frame === 'string') return true;
+  return depth > 0 && Object.values(o).some((x) => carriesFrame(x, depth - 1));
+}
+
 interface Job {
   pid: string;
   hash: string;
@@ -92,14 +114,8 @@ export class SnapshotService {
     }
     this.available = true;
     this.server.service.on('screens', (e: { pid: string }) => this.enqueueProject(e.pid));
-    this.server.service.on('tx', (e: { pid: string; ops: { path: readonly string[] }[] }) => {
-      if (
-        e.ops.some(
-          (o) =>
-            o.path.includes('frame') || o.path[0] === 'frame' || o.path[0] === 'snapshotAt' || o.path[0] === 'presets',
-        )
-      )
-        this.enqueueProject(e.pid);
+    this.server.service.on('tx', (e: { pid: string; ops: SnapOp[] }) => {
+      if (e.ops.some(opNeedsSnapshots)) this.enqueueProject(e.pid);
     });
     for (const pid of this.server.service.projects.keys()) this.enqueueProject(pid);
     return true;
