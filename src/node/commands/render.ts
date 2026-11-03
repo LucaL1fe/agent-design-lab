@@ -215,10 +215,14 @@ register({
   name: 'render',
   summary: 'Render screens to PNG files to look at them (--sheet: one picture, --flow <id>: along the arrows)',
   usage:
-    'adl render <id>... [--sheet] [--flow <start-id>] [--section <id>] [--canvas] [--scale 1|2] [--width 300] [--out <dir>] [--page <id>]',
+    'adl render <id>... [--sheet] [--flow <start-id>] [--section <id>] [--canvas] [--scale 1|2] [--width 300] [--out <dir>] [--page <id>] [--base64]',
   run: async (args, ctx) => {
+    // --base64 with screen ids returns their pictures; on its own (or with a section) it is the canvas picture
+    const named = args._.length > 0 || list(args.id).length > 0 || !!str(args.flow);
     const canvas =
-      args.canvas === true || args.base64 === true || (!!str(args.section) && !args._.length && args.sheet !== true);
+      args.canvas === true ||
+      (args.base64 === true && !named && args.sheet !== true) ||
+      (!!str(args.section) && !args._.length && args.sheet !== true);
     return withRenderer(args, ctx, canvas, async (server, snaps) => {
       const service = server.service;
       const st = pickProject(service, args, ctx.cwd, ctx.server);
@@ -270,10 +274,11 @@ register({
         }
       }
       const sheet = args.sheet === true || !!flowStart;
+      const pictures: { png?: string; pngs?: { id: Id; png: string }[] } = {};
       if (sheet) {
         const cardW = num(args.width) ?? 300;
         const html = sheetHtml(st, page, shots, cardW, !!flowStart);
-        const png = await snaps.withPage({ width: 1800, height: 1000, scale: 1 }, async (p) => {
+        const png = await snaps.withPage({ width: 1800, height: 1000, scale }, async (p) => {
           await p.setContent(html);
           await p.waitForFunction(() =>
             [...(globalThis as Win).document.images].every((i: { complete: boolean }) => i.complete),
@@ -289,12 +294,14 @@ register({
         const file = path.join(outDir, `${name}.png`);
         await fsp.writeFile(file, png);
         files.push(file);
+        if (args.base64 === true) pictures.png = png.toString('base64');
       } else {
         for (const s of shots) {
           const file = path.join(outDir, `${s.t.id}.png`);
           await fsp.writeFile(file, s.png);
           files.push(file);
         }
+        if (args.base64 === true) pictures.pngs = shots.map((s) => ({ id: s.t.id, png: s.png.toString('base64') }));
       }
       const lines = [
         `Rendered ${plural(shots.length, 'screen')}${sheet ? ' on one sheet' : ''}: ${files.map(rel).join(', ')}`,
@@ -302,7 +309,7 @@ register({
       if (missing.length) lines.push(`Not rendered: ${missing.join(', ')}`);
       if (warnings.length) lines.push(...warnings.map((w) => `warning: ${w}`));
       lines.push('Look at the PNGs before reporting: text fits, nothing overlaps, it matches the brief.');
-      return { ok: true, text: lines.join('\n'), data: { files, missing, warnings } };
+      return { ok: true, text: lines.join('\n'), data: { files, missing, warnings, ...pictures } };
     });
   },
 });

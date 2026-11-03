@@ -1622,6 +1622,55 @@ svg.i {
 .ix-hdl.rb {
   cursor: nwse-resize;
 }
+/* the action row above the hovered (or the selected) screen's name: copy the name, copy it with a picture, the
+   picture as PNG or JPG; screen space, so the same size at every zoom */
+.ix > .ix-bar {
+  display: flex;
+  gap: 6px;
+  padding-bottom: 4px;
+  pointer-events: auto;
+  white-space: nowrap;
+}
+.ix > .ix-bar[hidden] {
+  display: none;
+}
+.ix-bar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px 0 8px;
+  border-radius: 8px;
+  font: 700 12px / 1 var(--ui);
+  color: var(--muted);
+  background: var(--panel-2);
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+.ix-bar button:hover {
+  color: var(--text);
+  background: var(--line);
+}
+.ix-bar svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+.ix-bar span + svg {
+  width: 12px;
+  height: 12px;
+  margin-left: -2px;
+}
+.ix-bar.short button:not(:first-child) span,
+.ix-bar.compact span {
+  display: none;
+}
+.ix-bar.short button:not(:first-child),
+.ix-bar.compact button {
+  padding: 0 7px;
+}
 .ix-drop {
   border: 3px solid var(--select);
   border-radius: 8px;

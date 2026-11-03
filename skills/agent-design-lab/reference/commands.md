@@ -65,6 +65,7 @@ Default statuses: `approved` (no banner), `existing` ("Already built": the produ
 | `adl render --flow S1` | One picture of the flow from S1 with the arrow labels between screens |
 | `adl render --sheet S1 S2 S3` · `adl render --section Onboarding --sheet` | Several screens on one picture |
 | `adl render --section Onboarding` | The section exactly as it looks on the canvas (arrows, banners, notes) |
+| `adl render S4 --base64` | Also returns the PNGs in the answer (`pngs`, or `png` with `--sheet`): what the canvas's copy and download buttons use |
 | `adl validate` | Errors and warnings: broken references, unlabelled arrows, triggers without anchors, missing stylesheets, planned screens |
 
 ## Handoff (building from the design)

@@ -258,6 +258,29 @@ describe('commands without a server', () => {
     expect(size('W2')).toEqual([390, 2000]);
   }, 60000);
 
+  it('render --base64 returns the pictures of the named screens, not the canvas', async () => {
+    // the canvas's copy and download buttons read them from the answer
+    const one = (await run('render', ['W1', '--scale', '2', '--base64'], pdir)) as {
+      ok: boolean;
+      data?: { pngs?: { id: string; png: string }[]; png?: string; tiles?: number };
+    };
+    expect(one.ok).toBe(true);
+    expect(one.data?.tiles).toBeUndefined();
+    expect(one.data?.pngs?.map((p) => p.id)).toEqual(['W1']);
+    const { PNG } = await import('pngjs');
+    const pic = PNG.sync.read(Buffer.from(one.data!.pngs![0]!.png, 'base64'));
+    expect([pic.width, pic.height]).toEqual([1200, 1400]);
+    const sheet = (await run('render', ['W1', 'H1', '--sheet', '--scale', '2', '--base64'], pdir)) as {
+      ok: boolean;
+      data?: { png?: string; pngs?: unknown };
+    };
+    expect(sheet.ok).toBe(true);
+    expect(sheet.data?.pngs).toBeUndefined();
+    const s = PNG.sync.read(Buffer.from(sheet.data!.png!, 'base64'));
+    // two 300 px cards side by side with their captions, at 2x
+    expect(s.width).toBeGreaterThan(1200);
+  }, 60000);
+
   it('render paints the bottom of a screen taller than the window, not a copy of its top', async () => {
     // regressions from tall screens on a real canvas: the window grew after the screen was drawn, and the last ~87 px
     // showed the screen's top again (390x1263, 390x1601); one capture beyond the window came out as repeated,

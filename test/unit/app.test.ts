@@ -1,5 +1,6 @@
 // Pure helpers of the canvas engine (no DOM).
 import { describe, expect, it } from 'vitest';
+import { namesOf, namesText } from '../../src/app/engine/picture.ts';
 import { cueTime, dueRound } from '../../src/app/engine/sound.ts';
 import { clampK, KEEP_VISIBLE, keepInView, stickyTitle } from '../../src/app/engine/viewport.ts';
 
@@ -142,5 +143,35 @@ describe('sound cues', () => {
     expect(dueRound(500, Number.POSITIVE_INFINITY, 1, 500)).toBe(0);
     expect(dueRound(99999, 0, 1, 500)).toBe(0);
     expect(cueTime(0, 0, 500)).toBe(500);
+  });
+});
+
+describe('copied names', () => {
+  const page = {
+    items: {
+      S1: { kind: 'screen' },
+      S2: { kind: 'screen' },
+      S3: { kind: 'screen' },
+      n1: { kind: 'note', text: 'x' },
+      sec: { kind: 'section', title: 'A' },
+    },
+    arrows: {},
+  } as never;
+  const rects = new Map([
+    ['S1', { x: 900, y: 40, w: 390, h: 844 }],
+    ['S2', { x: 0, y: 0, w: 390, h: 844 }],
+    ['S3', { x: 0, y: 1400, w: 390, h: 844 }],
+    ['n1', { x: 0, y: 0, w: 200, h: 80 }],
+    ['sec', { x: 0, y: 0, w: 2000, h: 3000 }],
+  ]);
+  it('are the screens in reading order, whatever order they were selected in', () => {
+    expect(namesOf(page, rects, ['S3', 'n1', 'S1', 'sec', 'S2'])).toEqual(['S2', 'S1', 'S3']);
+  });
+  it('are every id as given when no screen is among them', () => {
+    expect(namesOf(page, rects, ['sec', 'n1'])).toEqual(['sec', 'n1']);
+  });
+  it('are shortened in a toast when there are many', () => {
+    expect(namesText(['A', 'B'])).toBe('A, B');
+    expect(namesText(['A', 'B', 'C', 'D', 'E', 'F'])).toBe('A, B, C and 3 more');
   });
 });

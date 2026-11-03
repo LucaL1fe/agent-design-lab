@@ -39,6 +39,8 @@ interface ScreenNode {
   /** The real product's capture shown in a device view (an <img>, or a <video> while it plays). */
   cap?: HTMLImageElement | HTMLVideoElement;
   capKey?: string;
+  /** The caption and banner's height as drawn (measured once per caption). */
+  headH?: number;
 }
 
 const SPEAKER =
@@ -366,6 +368,16 @@ export class Engine {
 
   // ---------- arrows ----------
 
+  /** A screen's caption and banner height as drawn (world px), for what sits on top of it (the action row). */
+  headHeight(id: Id): number {
+    const n = this.screens.get(id);
+    if (n && n.headH === undefined && n.el.isConnected) {
+      const h = n.head.offsetHeight;
+      if (h) n.headH = h;
+    }
+    return n?.headH ?? (this.page ? this.headOf(this.page, id) - 6 : 0);
+  }
+
   /** Caption + banner height above a screen (0 for other items), so arrows attach above it. */
   private headOf(page: PageDoc, id: Id): number {
     const it = page.items[id];
@@ -480,6 +492,7 @@ export class Engine {
     const meta = this.model.screenOf(id, it);
     const title = it.title ?? meta?.title;
     n.key = this.screenKey(id, it);
+    delete n.headH;
     const st = findStatus(project, it.status);
     const banner = showsBanner(project, it.status);
     n.head.replaceChildren();

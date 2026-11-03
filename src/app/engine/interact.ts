@@ -21,13 +21,28 @@ import { routeAll } from '../../core/route.ts';
 import { arrowStylesOf } from '../../core/status.ts';
 import type { Arrow, Id, Item, NoteColor, Rect, Side } from '../../core/types.ts';
 import { api } from '../boot/connection.ts';
-import { app, navigate, toast } from '../state/app.ts';
+import { type AppState, app, dismiss, navigate, toast } from '../state/app.ts';
 import { toggleScreenSound } from '../state/sound.ts';
 import { type Engine, HEAD_H } from './engine.ts';
+import { b64Blob, download, fileName, namesOf, namesText, toJpeg, writeClipboard } from './picture.ts';
 import { isTyping } from './viewport.ts';
 
 const NOTE_COLORS: NoteColor[] = ['yellow', 'blue', 'green', 'pink', 'grey'];
 const SVGNS = 'http://www.w3.org/2000/svg';
+
+/** The action row's height on screen, its 4 px gap to the caption included (the pointer crosses it without leaving). */
+const BAR_H = 30;
+/** Most screens on one copied picture (each is rendered, so more takes long). */
+const SHEET_MAX = 20;
+const svg = (d: string) =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const ICON_COPY = svg('<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/>');
+const ICON_PICTURE = svg(
+  '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-9 9"/>',
+);
+const ICON_DOWNLOAD = svg('<path d="M12 4v11m-5-5 5 5 5-5M5 20h14"/>');
+const ICON_MORE = svg('<path d="m7 10 5 5 5-5"/>');
+const attr = (x: string) => x.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
 type Mode =
   | { k: 'idle' }
@@ -146,8 +161,8 @@ export class Interaction {
       return;
     if (this.editor && this.editor.contains(ev.target as Node)) return;
     if (this.editor) this.closeEditor(true);
-    // a screen's speaker is a button: no selection, no drag (the click turns the sound on)
-    if ((ev.target as Element).closest?.('[data-snd]')) {
+    // a screen's speaker and its action row are buttons: no selection, no drag (their clicks do the rest)
+    if ((ev.target as Element).closest?.('[data-snd], .ix-bar')) {
       ev.preventDefault();
       return;
     }
@@ -499,7 +514,8 @@ export class Interaction {
 
   private updateHover(ev: PointerEvent) {
     const t = ev.target as Element;
-    if (t.closest('[data-h]')) return;
+    // on a handle or the action row: the screen stays hovered
+    if (t.closest('[data-h], .ix-bar')) return;
     const el = t.closest('.it[data-id]') as HTMLElement | null;
     const id = el?.dataset.id;
     this.setHover(id && this.page.items[id]?.kind !== 'section' ? id : undefined);
@@ -580,6 +596,7 @@ export class Interaction {
         put('hover', 'ix-hover', { x: sr.x - 2, y: sr.y - 2, w: sr.w + 4, h: sr.h + 4 });
       }
     }
+    this.drawBar(s, m, k);
     const edgeFor =
       m.k === 'idle'
         ? this.hover && this.connectable(this.hover)
@@ -701,6 +718,107 @@ export class Interaction {
       this.boxes.delete(key);
     }
     if (this.editor) this.positionEditor();
+  }
+
+  // ---------- the action row ----------
+
+  private bar?: HTMLDivElement | undefined;
+  private barId?: Id | undefined;
+  private barSig = '';
+  /** The row's width with every label, and with the first one only: narrower screens get fewer labels. */
+  private barWidths: [number, number] = [0, 0];
+
+  /** The screen the action row is on: the hovered one, else the one selected screen. */
+  private barTarget(s: AppState, m: Mode, k: number): Id | undefined {
+    if (m.k !== 'idle' || s.tool !== 'select' || k < 0.14 || s.presenting || s.compare || this.editor) return undefined;
+    const isScreen = (id: Id | undefined) => !!id && this.page.items[id]?.kind === 'screen' && this.e.rects.has(id);
+    if (isScreen(this.hover)) return this.hover;
+    return s.selection.length === 1 && isScreen(s.selection[0]) ? s.selection[0] : undefined;
+  }
+
+  /** The row above a screen's name: copy its name, copy it with a picture, its picture as PNG, JPG or on the
+   *  clipboard. Drawn in screen space, so it keeps its size at every zoom; it never changes the layout. */
+  private drawBar(s: AppState, m: Mode, k: number) {
+    const id = this.barTarget(s, m, k);
+    if (!id) {
+      if (this.bar) this.bar.hidden = true;
+      this.barId = undefined;
+      return;
+    }
+    if (!this.bar) {
+      const b = document.createElement('div');
+      b.className = 'ix-bar';
+      b.setAttribute('role', 'toolbar');
+      b.addEventListener('click', (ev) => this.barClick(ev));
+      this.layer.appendChild(b);
+      this.bar = b;
+    }
+    const b = this.bar;
+    const it = this.page.items[id]!;
+    const n = namesOf(this.page, this.e.rects, this.barIds(id)).length;
+    const drawn = !!this.model.screenOf(id, it);
+    const sig = `${id}|${n}|${drawn}`;
+    b.hidden = false;
+    this.barId = id;
+    if (sig !== this.barSig) {
+      this.barSig = sig;
+      const button = (act: string, icon: string, label: string, title: string, more = '') =>
+        `<button type="button" data-bar="${act}" title="${title}" aria-label="${label}">${icon}<span>${label}</span>${more}</button>`;
+      b.innerHTML =
+        button(
+          'copy',
+          ICON_COPY,
+          n > 1 ? `Copy ${n} names` : 'Copy name',
+          n > 1 ? `Copy the ${n} selected screens' names (⌘C)` : `Copy “${attr(id)}” (⌘C)`,
+        ) +
+        (drawn
+          ? button(
+              'copy-pic',
+              ICON_PICTURE,
+              n > 1 ? 'Names + picture' : 'Name + picture',
+              `Copy ${n > 1 ? 'the names' : 'the name'} and a picture with ${n > 1 ? 'them' : 'it'} on it (⇧⌘C)`,
+            ) + button('pic', ICON_DOWNLOAD, 'Picture', 'Download the picture as PNG or JPG, or copy it', ICON_MORE)
+          : '');
+      b.classList.remove('compact', 'short');
+      const full = b.offsetWidth;
+      b.classList.add('short');
+      this.barWidths = [full, b.offsetWidth];
+    }
+    const sr = this.screenRect(this.e.rects.get(id)!);
+    const y = sr.y - this.e.headHeight(id) * k - BAR_H;
+    b.style.transform = `translate(${Math.round(sr.x)}px, ${Math.round(y)}px)`;
+    b.classList.toggle('short', sr.w < this.barWidths[0]);
+    b.classList.toggle('compact', sr.w < this.barWidths[1]);
+  }
+
+  /** What the row's copy buttons act on: the whole selection when the screen is part of it. */
+  private barIds(id: Id): Id[] {
+    const sel = app.get().selection;
+    return sel.length > 1 && sel.includes(id) ? sel : [id];
+  }
+
+  private barClick(ev: MouseEvent) {
+    const btn = (ev.target as Element).closest('[data-bar]') as HTMLElement | null;
+    const id = this.barId;
+    if (!btn || !id) return;
+    ev.stopPropagation();
+    const act = btn.dataset.bar;
+    if (act === 'copy') this.copyNames(this.barIds(id));
+    else if (act === 'copy-pic') this.copyWithPicture(this.barIds(id));
+    else if (act === 'pic') {
+      const rr = this.e.root.getBoundingClientRect();
+      const br = btn.getBoundingClientRect();
+      this.openMenu(
+        [
+          ['Download PNG', () => void this.downloadScreen(id, 'png')],
+          ['Download JPG', () => void this.downloadScreen(id, 'jpg')],
+          ['Copy picture', () => this.copyPicture(id)],
+        ],
+        br.left - rr.left,
+        br.bottom - rr.top + 4,
+        'ix-picmenu',
+      );
+    }
   }
 
   private drawArrowPreview(id: Id, arrow: Arrow) {
@@ -1184,7 +1302,7 @@ export class Interaction {
   // ---------- double click, overlay clicks, context menu ----------
 
   private dbl(ev: MouseEvent) {
-    if ((ev.target as Element).closest?.('[data-snd]')) return;
+    if ((ev.target as Element).closest?.('[data-snd], .ix-bar')) return;
     const hit = this.hitAt(ev);
     if (hit.arrow) return this.editLabel(hit.arrow);
     if (hit.id) {
@@ -1310,6 +1428,8 @@ export class Interaction {
       items.push('sep');
       items.push(['Duplicate', () => this.duplicate(), '⌘D']);
       items.push(['Copy', () => this.copy(), '⌘C']);
+      if (it.kind === 'screen')
+        items.push(['Copy with picture', () => this.copyWithPicture(this.copyTargets()), '⇧⌘C']);
       items.push([it.kind === 'screen' ? 'Remove from page' : 'Delete', () => this.deleteSelection(), '⌫']);
     } else {
       items.push(['Paste here', () => void this.paste(wx, wy), '⌘V']);
@@ -1320,8 +1440,15 @@ export class Interaction {
       items.push(['Select all', () => this.selectAll(), '⌘A']);
       items.push(['Zoom to fit', () => this.e.fitAll(), '⇧1']);
     }
+    const rr = this.e.root.getBoundingClientRect();
+    this.openMenu(items, ev.clientX - rr.left, ev.clientY - rr.top);
+  }
+
+  /** A small menu at a point of the canvas (the context menu, the action row's picture menu). */
+  private openMenu(items: ([string, () => void, string?] | 'sep')[], left: number, top: number, cls = 'ix-ctx') {
+    this.closeContext();
     const menu = document.createElement('div');
-    menu.className = 'menu ix-ctx';
+    menu.className = `menu ${cls}`;
     menu.setAttribute('role', 'menu');
     for (const x of items) {
       if (x === 'sep') {
@@ -1346,8 +1473,8 @@ export class Interaction {
       menu.appendChild(b);
     }
     const rr = this.e.root.getBoundingClientRect();
-    menu.style.left = `${Math.min(ev.clientX - rr.left, rr.width - 240)}px`;
-    menu.style.top = `${Math.min(ev.clientY - rr.top, rr.height - items.length * 34 - 20)}px`;
+    menu.style.left = `${Math.min(left, rr.width - 240)}px`;
+    menu.style.top = `${Math.min(top, rr.height - items.length * 34 - 20)}px`;
     menu.onpointerdown = (e2) => e2.stopPropagation();
     this.e.overlay.appendChild(menu);
     this.ctxEl = menu;
@@ -1407,7 +1534,10 @@ export class Interaction {
       return;
     }
     if (mod && ev.key.toLowerCase() === 'c') {
-      this.copy();
+      if (ev.shiftKey) {
+        ev.preventDefault();
+        this.copyWithPicture(this.copyTargets());
+      } else this.copy();
       return;
     }
     if (mod && ev.key.toLowerCase() === 'v') {
@@ -1513,12 +1643,94 @@ export class Interaction {
       });
   }
 
+  /** ⌘C: the items for ⌘V on the canvas, and their names (the screens') as text on the clipboard. */
   copy() {
-    const ids = app.get().selection;
+    const ids = this.copyTargets();
     if (!ids.length) return;
     clipboard = { project: this.model.id, page: this.e.pageId, ids: [...ids] };
-    navigator.clipboard?.writeText(ids.join(', ')).catch(() => undefined);
-    toast({ kind: 'ok', text: `Copied ${ids.length} item${ids.length === 1 ? '' : 's'}` });
+    this.copyNames(ids);
+  }
+
+  /** What ⌘C and ⇧⌘C act on: the selection, else the screen under the pointer. */
+  private copyTargets(): Id[] {
+    const sel = app.get().selection;
+    if (sel.length) return sel;
+    return this.hover && this.page.items[this.hover]?.kind === 'screen' ? [this.hover] : [];
+  }
+
+  private copyNames(ids: Id[]) {
+    const names = namesOf(this.page, this.e.rects, ids);
+    const screens = names.some((id) => this.page.items[id]?.kind === 'screen');
+    writeClipboard(names.join(', ')).then(
+      () =>
+        toast({ kind: 'ok', text: `Copied ${namesText(names)}${screens ? ' · ⇧⌘C copies a picture with them' : ''}` }),
+      () => toast({ kind: 'ok', text: `Copied ${ids.length} item${ids.length === 1 ? '' : 's'}` }),
+    );
+  }
+
+  /** ⇧⌘C: the screens' names as text, and one picture of them with their names and banners on it. */
+  private copyWithPicture(ids: Id[]) {
+    const names = namesOf(this.page, this.e.rects, ids).filter((id) => this.page.items[id]?.kind === 'screen');
+    if (!names.length) {
+      toast({ kind: 'info', text: 'Select a screen (or point at one) to copy it with a picture' });
+      return;
+    }
+    const drawn = names.filter((id) => this.model.screenOf(id, this.page.items[id]!)).slice(0, SHEET_MAX);
+    if (!drawn.length) {
+      this.copyNames(names);
+      return;
+    }
+    const busy = toast({ kind: 'info', text: `Rendering the picture of ${namesText(drawn)}…`, ms: 60000 });
+    const png = renderScreens(this.model.id, this.e.pageId, drawn, true).then((r) => b64Blob(r.png!, 'image/png'));
+    writeClipboard(names.join(', '), png).then(
+      () => {
+        dismiss(busy);
+        const left = names.length - drawn.length;
+        toast({
+          kind: 'ok',
+          text: `Copied ${namesText(names)} with a picture${left ? ` (${left} without a picture: no HTML yet, or more than ${SHEET_MAX})` : ''}`,
+        });
+      },
+      (e: Error) => {
+        dismiss(busy);
+        toast({ kind: 'warn', text: `Copy failed: ${e.message}` });
+      },
+    );
+  }
+
+  /** One screen's picture, at 2x, as it would be downloaded. */
+  private screenPicture(id: Id): Promise<Blob> {
+    return renderScreens(this.model.id, this.e.pageId, [id], false).then((r) => {
+      const png = r.pngs?.find((x) => x.id === id)?.png;
+      if (!png) throw new Error(`no picture of ${id}`);
+      return b64Blob(png, 'image/png');
+    });
+  }
+
+  private copyPicture(id: Id) {
+    const busy = toast({ kind: 'info', text: `Rendering ${id}…`, ms: 60000 });
+    writeClipboard(undefined, this.screenPicture(id)).then(
+      () => {
+        dismiss(busy);
+        toast({ kind: 'ok', text: `Copied the picture of ${id}` });
+      },
+      (e: Error) => {
+        dismiss(busy);
+        toast({ kind: 'warn', text: `Copy failed: ${e.message}` });
+      },
+    );
+  }
+
+  private async downloadScreen(id: Id, type: 'png' | 'jpg') {
+    const busy = toast({ kind: 'info', text: `Rendering ${id}…`, ms: 60000 });
+    try {
+      const png = await this.screenPicture(id);
+      download(type === 'png' ? png : await toJpeg(png), `${fileName(id)}.${type}`);
+    } catch (e) {
+      toast({ kind: 'warn', text: `${type.toUpperCase()} export failed: ${(e as Error).message}` });
+    } finally {
+      dismiss(busy);
+    }
   }
 
   async paste(wx?: number, wy?: number) {
@@ -1612,11 +1824,30 @@ async function downloadPng(pid: string, page: string, id: Id, name: string) {
       body: JSON.stringify({ args: ['--project', pid, '--page', page, '--section', id, '--base64'] }),
     });
     if (!r.ok || !r.data?.png) throw new Error(r.text);
-    const a = document.createElement('a');
-    a.href = `data:image/png;base64,${r.data.png}`;
-    a.download = `${name.replace(/[^\w.-]+/g, '-')}.png`;
-    a.click();
+    download(b64Blob(r.data.png, 'image/png'), `${fileName(name)}.png`);
   } catch (e) {
     toast({ kind: 'warn', text: `PNG export failed: ${(e as Error).message}` });
   }
+}
+
+interface Pictures {
+  /** One picture of all of them (--sheet). */
+  png?: string;
+  /** One picture each. */
+  pngs?: { id: Id; png: string }[];
+}
+
+/** Pictures of screens from the server (`adl render --base64`), at 2x: one each, or one sheet with their names. */
+async function renderScreens(pid: string, page: string, ids: Id[], sheet: boolean): Promise<Pictures> {
+  const r = await api<{ ok: boolean; text: string; data?: Pictures & { files?: string[] } }>('/api/cmd/render', {
+    method: 'POST',
+    body: JSON.stringify({
+      args: [...ids, '--project', pid, '--page', page, '--scale', '2', '--base64', ...(sheet ? ['--sheet'] : [])],
+    }),
+  });
+  if (!r.ok) throw new Error(r.text);
+  // a server started before screen pictures existed answers with a picture of the whole page instead
+  if (!Array.isArray(r.data?.files)) throw new Error('restart the canvas (adl open) to get screen pictures');
+  if (sheet ? !r.data.png : !r.data.pngs) throw new Error(r.text);
+  return r.data;
 }
