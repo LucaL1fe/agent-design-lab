@@ -92,8 +92,8 @@ approved screens ──▶ adl handoff ──▶ another agent builds the app �
 | ⌘K | search ids, captions, banners, notes, labels and the words inside screens |
 | P | present: walk the flow from the selected screen (→ next, ← back, Esc) |
 | ⌘Z · ⇧⌘Z · ⌘D · ⌫ | undo, redo, duplicate, take off the page |
-| ⌘C · ⇧⌘C | copy the selected screens' names (to paste into a prompt); with a picture of them |
-| Hover a screen | a row above its name: copy the name, copy it with a picture, download it as PNG or JPG |
+| ⌘-click · ⌘C | select several screens; copy their names (to paste into a prompt) |
+| Hover a screen | a row above its name: copy the name (all selected names when it is selected), copy them with a picture, download it as PNG or JPG |
 
 The side panel (⌥I) shows the selected screen's file, status, banner text and arrows. Click **Approve** when a screen is
 right; approved screens drop their banner and become part of the handoff.

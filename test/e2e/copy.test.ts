@@ -1,5 +1,6 @@
-// Screen names and pictures: the action row above a hovered (or the selected) screen's name, ⌘C for the names, ⇧⌘C
-// for the names with a picture, and the row's picture menu (PNG, JPG, clipboard). The row never changes the layout.
+// Screen names and pictures: the action row above a hovered (or the selected) screen's name, ⌘C for the names of the
+// selected screens, the row's names with a picture, and its picture menu (PNG, JPG, clipboard). The row never changes
+// the layout.
 import fs from 'node:fs';
 import { PNG } from 'pngjs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -107,6 +108,18 @@ describe('the action row', () => {
 });
 
 describe('copying names', () => {
+  it('⌘-click selects several screens, and ⌘C copies all their names', async () => {
+    for (const id of ['A3', 'A1']) {
+      const [x, y] = await centerOf(h, id);
+      await h.page.keyboard.down('Meta');
+      await h.page.mouse.click(x, y);
+      await h.page.keyboard.up('Meta');
+    }
+    expect((await state()).selection).toEqual(['A3', 'A1']);
+    await h.page.keyboard.press('ControlOrMeta+c');
+    await expect.poll(clipText).toBe('A1, A3');
+  });
+
   it('⌘C copies the selected screens in reading order', async () => {
     await h.page.evaluate(() => (window as any).__adl.app.set({ selection: ['A3', 'n1', 'A1'] }));
     await h.page.keyboard.press('ControlOrMeta+c');
@@ -123,9 +136,17 @@ describe('copying names', () => {
     expect((await state()).selection).toEqual(['A3', 'n1', 'A1']);
   });
 
-  it('⇧⌘C copies the names and one picture showing both screens', async () => {
-    await h.page.evaluate(() => navigator.clipboard.writeText(''));
+  it('⇧⌘C is left to clipboard managers', async () => {
+    await h.page.evaluate(() => navigator.clipboard.writeText('kept'));
     await h.page.keyboard.press('ControlOrMeta+Shift+c');
+    await h.page.waitForTimeout(400);
+    expect(await clipText()).toBe('kept');
+  });
+
+  it('Names + picture copies the selected names and one picture showing both screens', async () => {
+    await h.page.evaluate(() => navigator.clipboard.writeText(''));
+    await hover('A1');
+    await clickBar('copy-pic');
     await expect.poll(clipTypes, { timeout: 60000 }).toEqual(['image/png', 'text/plain']);
     expect(await clipText()).toBe('A1, A3');
     // A1 is #1d2b4f and A3 #1d4f3a in the fixture: two 300 px cards side by side with their captions, at 2x

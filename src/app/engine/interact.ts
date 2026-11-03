@@ -776,7 +776,7 @@ export class Interaction {
               'copy-pic',
               ICON_PICTURE,
               n > 1 ? 'Names + picture' : 'Name + picture',
-              `Copy ${n > 1 ? 'the names' : 'the name'} and a picture with ${n > 1 ? 'them' : 'it'} on it (⇧⌘C)`,
+              `Copy ${n > 1 ? 'the names' : 'the name'} and a picture with ${n > 1 ? 'them' : 'it'} on it`,
             ) + button('pic', ICON_DOWNLOAD, 'Picture', 'Download the picture as PNG or JPG, or copy it', ICON_MORE)
           : '');
       b.classList.remove('compact', 'short');
@@ -1429,7 +1429,7 @@ export class Interaction {
       items.push(['Duplicate', () => this.duplicate(), '⌘D']);
       items.push(['Copy', () => this.copy(), '⌘C']);
       if (it.kind === 'screen')
-        items.push(['Copy with picture', () => this.copyWithPicture(this.copyTargets()), '⇧⌘C']);
+        items.push(['Copy with picture', () => this.copyWithPicture(this.copyTargets())]);
       items.push([it.kind === 'screen' ? 'Remove from page' : 'Delete', () => this.deleteSelection(), '⌫']);
     } else {
       items.push(['Paste here', () => void this.paste(wx, wy), '⌘V']);
@@ -1533,11 +1533,9 @@ export class Interaction {
       this.selectAll();
       return;
     }
-    if (mod && ev.key.toLowerCase() === 'c') {
-      if (ev.shiftKey) {
-        ev.preventDefault();
-        this.copyWithPicture(this.copyTargets());
-      } else this.copy();
+    // ⇧⌘C stays free: clipboard managers take it (the row's "Names + picture" copies the picture)
+    if (mod && !ev.shiftKey && ev.key.toLowerCase() === 'c') {
+      this.copy();
       return;
     }
     if (mod && ev.key.toLowerCase() === 'v') {
@@ -1651,7 +1649,7 @@ export class Interaction {
     this.copyNames(ids);
   }
 
-  /** What ⌘C and ⇧⌘C act on: the selection, else the screen under the pointer. */
+  /** What ⌘C and the context menu's copies act on: the selection, else the screen under the pointer. */
   private copyTargets(): Id[] {
     const sel = app.get().selection;
     if (sel.length) return sel;
@@ -1660,15 +1658,13 @@ export class Interaction {
 
   private copyNames(ids: Id[]) {
     const names = namesOf(this.page, this.e.rects, ids);
-    const screens = names.some((id) => this.page.items[id]?.kind === 'screen');
     writeClipboard(names.join(', ')).then(
-      () =>
-        toast({ kind: 'ok', text: `Copied ${namesText(names)}${screens ? ' · ⇧⌘C copies a picture with them' : ''}` }),
+      () => toast({ kind: 'ok', text: `Copied ${namesText(names)}` }),
       () => toast({ kind: 'ok', text: `Copied ${ids.length} item${ids.length === 1 ? '' : 's'}` }),
     );
   }
 
-  /** ⇧⌘C: the screens' names as text, and one picture of them with their names and banners on it. */
+  /** The screens' names as text, and one picture of them with their names and banners on it. */
   private copyWithPicture(ids: Id[]) {
     const names = namesOf(this.page, this.e.rects, ids).filter((id) => this.page.items[id]?.kind === 'screen');
     if (!names.length) {

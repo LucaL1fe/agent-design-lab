@@ -291,10 +291,12 @@ Telling an agent which screens to change meant reading their ids off the canvas 
   shows fewer labels (first label only, then icons only). On a screen in a multi-selection the copy buttons act on
   the whole selection.
 - ⌘C still copies items for ⌘V; the text on the system clipboard is now the screens' ids in reading order (other ids
-  only when no screen is selected), and with nothing selected it copies the screen under the pointer. ⇧⌘C copies the
-  same names plus one picture of those screens with their captions and banners (the `--sheet` look, at 2x, at most
-  20), so the picture says which screens it shows on its own. The clipboard write starts inside the key press or
-  click with the picture as a promise (browsers only allow it there) and finishes when the server has rendered it.
+  only when no screen is selected), and with nothing selected it copies the screen under the pointer (⌘-click or
+  ⇧-click adds screens to the selection). "Name + picture" (the row, the context menu) copies the same names plus one
+  picture of those screens with their captions and banners (the `--sheet` look, at 2x, at most 20), so the picture
+  says which screens it shows on its own. No shortcut for it: ⇧⌘C was the first idea, but clipboard managers take it
+  system-wide. The clipboard write starts inside the click with the picture as a promise (browsers only allow it
+  there) and finishes when the server has rendered it.
 - `adl render <ids> --base64` returns the pictures (`pngs`, or `png` with `--sheet`) instead of switching to the
   canvas picture; `--scale` now applies to the sheet too. JPEG is made in the browser from the PNG.
 - Tests: unit (names), integration (render --base64), e2e `test/e2e/copy.test.ts` (headless Chrome's own clipboard).
