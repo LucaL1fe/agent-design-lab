@@ -443,7 +443,10 @@ describe('proposals and history', () => {
     // regression from a real canvas: after picks, the journeys that went through the replaced screens still named
     // them, so validate warned "step is not on this page" and the journey had a hole where the screen was
     const d = demo();
-    d.pages.truth!.flows = { main: { title: 'Main', steps: ['S1', 'S4', 'S6'] }, other: { title: 'Other', steps: ['S1'] } };
+    d.pages.truth!.flows = {
+      main: { title: 'Main', steps: ['S1', 'S4', 'S6'] },
+      other: { title: 'Other', steps: ['S1'] },
+    };
     const after = applyOps(d, pickProposal(d, 'truth', 'S6a', 'human').ops).docs;
     expect(after.pages.truth!.flows!.main!.steps).toEqual(['S1', 'S4', 'S6a']);
     expect(after.pages.truth!.flows!.other!.steps).toEqual(['S1']);

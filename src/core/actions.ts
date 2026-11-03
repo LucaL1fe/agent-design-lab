@@ -554,7 +554,11 @@ function takePlace(tx: Tx, page: string, proposalId: Id, targetId: Id, siblings:
   for (const [fid, f] of Object.entries(tx.page(page).flows ?? {})) {
     const at = f.steps.flatMap((s, i) => (s === targetId ? [i] : []));
     if (!at.length) continue;
-    tx.set(pageKey(page), ['flows', fid, 'steps'], f.steps.map((s) => (s === targetId ? proposalId : s)));
+    tx.set(
+      pageKey(page),
+      ['flows', fid, 'steps'],
+      f.steps.map((s) => (s === targetId ? proposalId : s)),
+    );
     handover.flows = [...(handover.flows ?? []), { id: fid, steps: at }];
   }
   return handover;
@@ -733,7 +737,11 @@ function undoPick(tx: Tx, page: string, id: Id, back: Item, heirId: Id, handover
   for (const ref of handover?.flows ?? []) {
     const f = tx.page(page).flows?.[ref.id];
     if (!f) continue;
-    tx.set(pageKey(page), ['flows', ref.id, 'steps'], f.steps.map((s, i) => (ref.steps.includes(i) && s === heirId ? id : s)));
+    tx.set(
+      pageKey(page),
+      ['flows', ref.id, 'steps'],
+      f.steps.map((s, i) => (ref.steps.includes(i) && s === heirId ? id : s)),
+    );
   }
   const next = { ...H, proposalFor: id } as ScreenItem;
   delete next.x;
