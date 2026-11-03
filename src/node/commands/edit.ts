@@ -21,6 +21,7 @@ import {
 } from '../../core/actions.ts';
 import { isValidId } from '../../core/ids.ts';
 import { clone } from '../../core/json.ts';
+import { defaultSize, placePage } from '../../core/layout.ts';
 import { diffDoc, pageKey } from '../../core/ops.ts';
 import { issuesOf, PageSchema, ProjectSchema } from '../../core/schema.ts';
 import { arrowStylesOf, statusesOf } from '../../core/status.ts';
@@ -417,7 +418,17 @@ register({
       for (const id of args._)
         if (!s.docs.pages[page]!.items[id]) throw new CommandError(`"${id}" is not on "${page}"`);
       const heirs = removalHeirs(s.docs, page, args._);
-      s.apply(removeItems(s.docs, page, args._), `${s.who} removed ${args._.join(', ')}`);
+      // a note anchored to a removed screen stays where it was drawn: its position becomes a page position, as the
+      // canvas does (without it the note kept its offset from the screen and jumped to the page's corner)
+      const placement = placePage(s.docs.pages[page]!, (id, it) =>
+        it.kind === 'screen'
+          ? s.service.frameSize(s.st, (it as ScreenItem).screen ?? id, (it as ScreenItem).frame)
+          : defaultSize(it),
+      );
+      s.apply(
+        removeItems(s.docs, page, args._, (id) => placement.rects.get(id)),
+        `${s.who} removed ${args._.join(', ')}`,
+      );
       const took = heirs.map(([id, heir]) => `; ${heir} takes ${id}'s place (its other options stay options)`).join('');
       return { ok: true, text: `Removed ${args._.join(', ')} from "${page}"${took}` };
     }),

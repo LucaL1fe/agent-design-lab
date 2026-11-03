@@ -173,6 +173,23 @@ describe('commands without a server', () => {
     expect((await run('remove', [id, tid, (far.data as { id: string }).id], pdir)).ok).toBe(true);
   });
 
+  it("remove keeps a removed screen's note where it was drawn", async () => {
+    expect((await run('screen', ['new', 'Q7', '--title', 'Gone soon'], pdir)).ok).toBe(true);
+    expect((await run('add', ['Q7'], pdir)).ok).toBe(true);
+    expect((await run('patch', ['truth', '{"items":{"Q7":{"x":4000,"y":3000}}}'], pdir)).ok).toBe(true);
+    expect((await run('note', ['a note under the screen', '--on', 'Q7'], pdir)).ok).toBe(true);
+    const nid = Object.entries(page().items).find(
+      ([, it]) => (it as { text?: string }).text === 'a note under the screen',
+    )![0];
+    expect((await run('remove', ['Q7'], pdir)).ok).toBe(true);
+    const note = page().items[nid];
+    expect(note.anchor).toBeUndefined();
+    // under where the screen was, not at its old offset from the page's corner
+    expect(note.x).toBeGreaterThanOrEqual(4000);
+    expect(note.y).toBeGreaterThan(3000);
+    expect((await run('remove', [nid], pdir)).ok).toBe(true);
+  });
+
   it('pick sends the original and the other option to History; history --restore brings one back', async () => {
     const r = await run('pick', ['H2a'], pdir);
     expect(r.text).toBe('H2a is used instead of H2. On the History page now: H2, H2b');
