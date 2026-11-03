@@ -1847,7 +1847,7 @@ async function renderScreens(pid: string, page: string, ids: Id[], sheet: boolea
   });
   if (!r.ok) throw new Error(r.text);
   // a server started before screen pictures existed answers with a picture of the whole page instead
-  if (!Array.isArray(r.data?.files)) throw new Error('restart the canvas (adl open) to get screen pictures');
+  if (!Array.isArray(r.data?.files)) throw new Error('the canvas server runs older code: restart it (adl serve --restart) to get screen pictures');
   if (sheet ? !r.data.png : !r.data.pngs) throw new Error(r.text);
   return r.data;
 }
