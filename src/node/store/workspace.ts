@@ -701,8 +701,10 @@ export class WorkspaceService extends EventEmitter {
     await waitStable(abs, 25, 10);
     const text = await readText(abs);
     if (text === undefined) {
-      // the file was deleted from outside: forget the page (it stays in memory until the project lists it again)
-      if (key !== 'project' && st.docs.pages[pageIdOf(key)!] && !st.writeTimers.has(key)) {
+      // the file was deleted from outside: forget the page (it stays in memory until the project lists it again).
+      // A page the project no longer lists is simply gone: nothing to warn about.
+      const pid = key === 'project' ? undefined : pageIdOf(key)!;
+      if (pid && st.docs.pages[pid] && st.docs.project.pages.includes(pid) && !st.writeTimers.has(key)) {
         st.invalid.set(rel, { file: rel, message: 'The file was deleted', line: 1, col: 1 });
         this.revalidate(st);
       }
@@ -776,6 +778,7 @@ export class WorkspaceService extends EventEmitter {
     }
     if (ops.length) {
       const res = this.apply(st.id, ops, { actor: 'agent', summary: summarize(key, ops) });
+      if (key === 'project') this.forgetUnlistedDeleted(st);
       if (conflicts.length) this.emitEvent('tx', { pid: st.id, actor: 'agent', ops: [], revs: res.revs, conflicts });
       // keep the agent's file untouched when it already matches what we hold (no surprise rewrites under the agent)
       const now = key === 'project' ? st.docs.project : st.docs.pages[pageIdOf(key)!];
@@ -787,6 +790,20 @@ export class WorkspaceService extends EventEmitter {
         }
       }
     }
+  }
+
+  /** A page whose file was deleted and which the project no longer lists: drop its "file was deleted" error. It
+   *  stayed up for good before (the error said "showing the last good version" of a page nobody could open). */
+  private forgetUnlistedDeleted(st: ProjectState) {
+    const listed = new Set(st.docs.project.pages);
+    let changed = false;
+    for (const rel of [...st.invalid.keys()]) {
+      const m = /^pages\/(.+)\.json$/.exec(rel);
+      if (!m || listed.has(m[1]) || exists(path.join(st.dir, rel))) continue;
+      st.invalid.delete(rel);
+      changed = true;
+    }
+    if (changed) this.revalidate(st);
   }
 
   private async loadPageFile(st: ProjectState, pid: string) {

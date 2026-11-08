@@ -129,6 +129,40 @@ describe('WorkspaceService', () => {
     expect(st.problems.some((p) => p.code === 'invalid-file')).toBe(false);
   });
 
+  it('forgets a page whose file was deleted once the project stops listing it (either order)', async () => {
+    for (const fileFirst of [true, false]) {
+      const { root, pdir } = fixture();
+      const extra = newPageDoc('Temporary review');
+      fs.writeFileSync(path.join(pdir, 'pages', 'review.json'), stringifyPage(extra as never));
+      const proj = JSON.parse(fs.readFileSync(path.join(pdir, 'project.json'), 'utf8'));
+      proj.pages = [...proj.pages, 'review'];
+      fs.writeFileSync(path.join(pdir, 'project.json'), JSON.stringify(proj, null, 2));
+      const s = await service(root);
+      const st = s.projects.get('demo')!;
+      await until(() => !!st.docs.pages.review);
+      const unlist = () => {
+        const p2 = JSON.parse(fs.readFileSync(path.join(pdir, 'project.json'), 'utf8'));
+        p2.pages = p2.pages.filter((x: string) => x !== 'review');
+        fs.writeFileSync(path.join(pdir, 'project.json'), JSON.stringify(p2, null, 2));
+      };
+      const remove = () => fs.rmSync(path.join(pdir, 'pages', 'review.json'));
+      if (fileFirst) {
+        remove();
+        // still listed: the person is told the file is gone
+        await until(() => st.problems.some((p) => p.code === 'invalid-file' && p.file === 'pages/review.json'));
+        unlist();
+      } else {
+        unlist();
+        await until(() => !st.docs.project.pages.includes('review'));
+        remove();
+      }
+      await until(() => !st.docs.project.pages.includes('review'));
+      await s.settle();
+      await new Promise((r) => setTimeout(r, 300));
+      expect(st.problems.filter((p) => p.file === 'pages/review.json')).toEqual([]);
+    }
+  });
+
   it('recompiles screens when their HTML or a stylesheet changes', async () => {
     const { root, pdir } = fixture();
     const s = await service(root);

@@ -300,6 +300,11 @@ Telling an agent which screens to change meant reading their ids off the canvas 
 - `adl render <ids> --base64` returns the pictures (`pngs`, or `png` with `--sheet`) instead of switching to the
   canvas picture; `--scale` now applies to the sheet too. JPEG is made in the browser from the PNG.
 - Tests: unit (names), integration (render --base64), e2e `test/e2e/copy.test.ts` (headless Chrome's own clipboard).
+- Deleted page error that never went away (Nov 8): a temporary page whose file was deleted from outside and then
+  dropped from project.json kept the red "pages/<id>.json: The file was deleted. Showing the last good version."
+  banner for good, although nobody could open that page any more. Now a page the project no longer lists never gets
+  that error, and dropping such a page from the list clears it (either order). Test: integration
+  `forgets a page whose file was deleted once the project stops listing it`.
 
 ## Open bugs
 (none known)
