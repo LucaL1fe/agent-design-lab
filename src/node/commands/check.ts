@@ -291,6 +291,10 @@ register({
           `page ${pid}${item.parent ? ` · section ${item.parent}` : ''} · status ${def?.label ?? item.status ?? 'none'}${item.banner ? `: “${item.banner}”` : ''}${item.pinned ? ' · placed by hand' : ''}`,
         );
         if (item.proposalFor) lines.push(`proposal for ${item.proposalFor}`);
+        if (e?.compiled?.media)
+          lines.push(
+            `${e.compiled.media === 'video' ? 'a video' : 'a picture'} (a photo, screenshot or recording), not built HTML`,
+          );
         const proposals = Object.entries(page.items)
           .filter(([, x]) => x.kind === 'screen' && x.proposalFor === id && !x.archived)
           .map(([x]) => x);

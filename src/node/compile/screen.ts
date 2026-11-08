@@ -14,7 +14,7 @@ import {
   transformCss,
 } from './css.ts';
 
-export const COMPILER_VERSION = 4;
+export const COMPILER_VERSION = 5;
 
 type Node = DefaultTreeAdapterMap['node'];
 type Element = DefaultTreeAdapterMap['element'];
@@ -36,6 +36,9 @@ export interface CompiledScreen {
   /** `<meta name="adl:snapshot" content="ms">`: the moment this screen's still pictures freeze its animations, for
    * screens whose look settles later than the project's snapshotAt. */
   snapshotAt?: number;
+  /** The screen is only a picture or a video (a photo, a screenshot, a recording of the real product) and not HTML
+   *  built for the design: found from the body, or set with `<meta name="adl:media" content="image|video|none">`. */
+  media?: ScreenMedia;
   htmlAttrs: Record<string, string>;
   bodyAttrs: Record<string, string>;
   body: string;
@@ -52,6 +55,8 @@ export interface CompiledScreen {
   cost: { keyframes: number; animations: number; infinite: number; backdrop: number; bytes: number };
   warnings: string[];
 }
+
+export type ScreenMedia = 'image' | 'video';
 
 export interface ScreenSound {
   /** Project-relative audio file. */
@@ -152,6 +157,7 @@ export function compileScreen(html: string, ctx: CompileContext): { screen: Comp
   const title = head ? textOf(find(head, 'title')).trim() || undefined : undefined;
   let frame: string | undefined;
   let snapshotAt: number | undefined;
+  let mediaMeta: ScreenMedia | 'none' | undefined;
   const fontLinks: string[] = [];
   const sheetFiles: string[] = [];
   const remoteSheets: string[] = [];
@@ -177,7 +183,11 @@ export function compileScreen(html: string, ctx: CompileContext): { screen: Comp
     if (n.tagName === 'style') collectStyle(n);
     else if (n.tagName === 'link') collectLink(n);
     else if (n.tagName === 'meta' && attr(n, 'name') === 'adl:frame') frame = attr(n, 'content')?.trim() || undefined;
-    else if (n.tagName === 'meta' && attr(n, 'name') === 'adl:snapshot') {
+    else if (n.tagName === 'meta' && attr(n, 'name') === 'adl:media') {
+      const v = attr(n, 'content')?.trim().toLowerCase();
+      if (v === 'image' || v === 'video' || v === 'none') mediaMeta = v;
+      else warnings.push(`adl:media "${attr(n, 'content') ?? ''}" is not image, video or none`);
+    } else if (n.tagName === 'meta' && attr(n, 'name') === 'adl:snapshot') {
       const ms = Number(attr(n, 'content')?.trim().replace(/ms$/, ''));
       if (attr(n, 'content')?.trim() && Number.isFinite(ms) && ms >= 0) snapshotAt = Math.round(ms);
       else warnings.push(`adl:snapshot "${attr(n, 'content') ?? ''}" is not a number of milliseconds`);
@@ -274,6 +284,7 @@ export function compileScreen(html: string, ctx: CompileContext): { screen: Comp
   };
   if (body) clean(body as unknown as ParentNode);
   const sounds = body ? collectSounds(body, ctx, deps, warnings) : [];
+  const media = mediaMeta === 'none' ? undefined : (mediaMeta ?? (body ? mediaOf(body) : undefined));
   if (removed)
     warnings.push(
       `Removed ${removed} script${removed === 1 ? '' : 's'} or event handler${removed === 1 ? '' : 's'}: screens are HTML and CSS only`,
@@ -358,6 +369,7 @@ export function compileScreen(html: string, ctx: CompileContext): { screen: Comp
     ...(title ? { title } : {}),
     ...(frame ? { frame } : {}),
     ...(snapshotAt !== undefined ? { snapshotAt } : {}),
+    ...(media ? { media } : {}),
     htmlAttrs: rootAttrs(htmlEl),
     bodyAttrs: rootAttrs(body),
     body: bodyHtml,
@@ -374,6 +386,27 @@ export function compileScreen(html: string, ctx: CompileContext): { screen: Comp
   };
   const hash = sha(JSON.stringify(out));
   return { screen: { ...out, hash }, sheets };
+}
+
+// wrappers a picture may sit in and still count as "only a picture"
+const MEDIA_WRAPPERS = new Set(['div', 'span', 'figure', 'a', 'main', 'section', 'article']);
+
+/** A body that holds nothing but one <img> / <picture> or one <video>, maybe inside plain wrappers: a photo, a
+ *  screenshot or a recording placed on the canvas, not HTML built for the design. Text anywhere = a built screen. */
+export function mediaOf(root: Node): ScreenMedia | undefined {
+  let n: Node = root;
+  for (let depth = 0; depth < 8; depth++) {
+    const kids = children(n).filter(
+      (c) => isEl(c) || (c.nodeName === '#text' && (c as unknown as { value: string }).value.trim() !== ''),
+    );
+    if (kids.length !== 1 || !isEl(kids[0]!)) return undefined;
+    const el = kids[0] as Element;
+    if (el.tagName === 'img' || el.tagName === 'picture') return 'image';
+    if (el.tagName === 'video') return 'video';
+    if (!MEDIA_WRAPPERS.has(el.tagName)) return undefined;
+    n = el;
+  }
+  return undefined;
 }
 
 /** `data-adl-sound` and `data-adl-sound-at`, in document order: files resolved and rewritten like an image's src, times

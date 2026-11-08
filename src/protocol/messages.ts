@@ -14,6 +14,8 @@ export interface ScreenMeta {
   gos: { el?: string; to: string }[];
   /** Files the screen plays in time with an element's animation (`data-adl-sound`), when it has any. */
   sounds?: { src: string; el: string; at?: number }[];
+  /** The screen is only a picture or a video (a photo, a screenshot, a recording), not HTML built for the design. */
+  media?: 'image' | 'video';
   warnings: string[];
   cost: { keyframes: number; animations: number; infinite: number; backdrop: number; bytes: number };
   sheets: string[];

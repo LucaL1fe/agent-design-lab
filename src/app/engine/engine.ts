@@ -36,12 +36,24 @@ interface ScreenNode {
   mounting?: boolean;
   imgSize?: number;
   key: string;
+  /** The "Picture" / "Video" tag in the frame's corner of a screen that is only a picture or a video. */
+  mtag?: HTMLDivElement;
   /** The real product's capture shown in a device view (an <img>, or a <video> while it plays). */
   cap?: HTMLImageElement | HTMLVideoElement;
   capKey?: string;
   /** The caption and banner's height as drawn (measured once per caption). */
   headH?: number;
 }
+
+// a screen that is only a picture or a video (a photo, a screenshot, a recording), not HTML built for the design
+const MEDIA_ICON = {
+  image:
+    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+  video:
+    '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>',
+} as const;
+const MEDIA_LABEL = { image: 'Picture', video: 'Video' } as const;
+const MEDIA_TITLE = 'A real picture or recording (a photo, a screenshot, a video), not a screen built in HTML';
 
 const SPEAKER =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="w1" d="M15.5 8.5a5 5 0 0 1 0 7"/><path class="w2" d="M18.6 5.4a9.5 9.5 0 0 1 0 13.2"/><path class="x" d="m16 9 6 6m0-6-6 6"/></svg>';
@@ -518,6 +530,14 @@ export class Engine {
       if (it.build.note) chip.title = it.build.note;
       cap.append(chip);
     }
+    if (meta?.media) {
+      const m = document.createElement('span');
+      m.className = `med med-${meta.media}`;
+      m.title = MEDIA_TITLE;
+      m.innerHTML = MEDIA_ICON[meta.media];
+      m.append(MEDIA_LABEL[meta.media]);
+      cap.append(m);
+    }
     const b = document.createElement('b');
     b.textContent = id;
     cap.append(b);
@@ -543,6 +563,21 @@ export class Engine {
     if (appv) n.frame.dataset.nocap = `No ${this.appView} capture yet`;
     else delete n.frame.dataset.nocap;
     n.el.classList.toggle('proposal', !!it.proposalFor);
+    // pictures and videos look different from built screens at any zoom: a ring and a tag in the corner
+    n.el.classList.toggle('media', !!meta?.media);
+    if (meta?.media) {
+      if (!n.mtag) {
+        n.mtag = document.createElement('div');
+        n.mtag.className = 'mtag';
+        n.mtag.title = MEDIA_TITLE;
+        n.frame.appendChild(n.mtag);
+      }
+      n.mtag.innerHTML = MEDIA_ICON[meta.media];
+      n.mtag.append(MEDIA_LABEL[meta.media]);
+    } else if (n.mtag) {
+      n.mtag.remove();
+      delete n.mtag;
+    }
     const f = this.model.frameOf(id, it);
     const preset = resolveFrame(f.spec, project);
     const radius = preset?.radius ?? (f.w <= 480 ? 36 : 10);

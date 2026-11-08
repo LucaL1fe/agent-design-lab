@@ -36,6 +36,8 @@ export interface ScreenMeta {
   anchors: string[];
   gos: CompiledScreen['gos'];
   sounds?: CompiledScreen['sounds'];
+  /** Only a picture or a video, not built HTML (see CompiledScreen.media). */
+  media?: CompiledScreen['media'];
   warnings: string[];
   cost: CompiledScreen['cost'];
   sheets: string[];
@@ -439,6 +441,7 @@ export class WorkspaceService extends EventEmitter {
       anchors: c.anchors,
       gos: c.gos,
       ...(c.sounds ? { sounds: c.sounds } : {}),
+      ...(c.media ? { media: c.media } : {}),
       warnings: c.warnings,
       cost: c.cost,
       sheets: c.sheets,
@@ -798,8 +801,8 @@ export class WorkspaceService extends EventEmitter {
     const listed = new Set(st.docs.project.pages);
     let changed = false;
     for (const rel of [...st.invalid.keys()]) {
-      const m = /^pages\/(.+)\.json$/.exec(rel);
-      if (!m || listed.has(m[1]) || exists(path.join(st.dir, rel))) continue;
+      const pid = /^pages\/(.+)\.json$/.exec(rel)?.[1];
+      if (!pid || listed.has(pid) || exists(path.join(st.dir, rel))) continue;
       st.invalid.delete(rel);
       changed = true;
     }

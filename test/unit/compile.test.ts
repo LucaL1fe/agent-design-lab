@@ -186,6 +186,33 @@ describe('adl:snapshot', () => {
   });
 });
 
+describe('pictures and videos (adl:media)', () => {
+  const doc = (body: string, meta = '') =>
+    `<!doctype html><html><head>${meta}<title>X</title><style>img{width:100%}</style></head><body>${body}</body></html>`;
+  const media = (body: string, meta = '') => compileScreen(doc(body, meta), ctx()).screen.media;
+  it('tells a screen that is only a picture or a video from a built one', () => {
+    expect(media('<img src="../assets/shot.webp" alt="">')).toBe('image');
+    expect(media('\n  <div class="wrap"><figure><img src="../assets/shot.webp"></figure></div>\n')).toBe('image');
+    expect(media('<picture><source srcset="../assets/a.avif"><img src="../assets/a.png"></picture>')).toBe('image');
+    expect(media('<video src="../assets/rec.mp4" autoplay muted loop></video>')).toBe('video');
+    // anything else on it = HTML built for the design
+    expect(media('<div class="card"><h1>Hello</h1><img src="../assets/a.png"></div>')).toBeUndefined();
+    expect(media('<div><img src="../assets/a.png"><img src="../assets/b.png"></div>')).toBeUndefined();
+    expect(media('<div>Caption <img src="../assets/a.png"></div>')).toBeUndefined();
+    expect(media('<div class="a"></div>')).toBeUndefined();
+  });
+  it('can be set by hand, and switched off', () => {
+    expect(media('<div class="bg"></div>', '<meta name="adl:media" content="image">')).toBe('image');
+    expect(media('<img src="../assets/a.png">', '<meta name="adl:media" content="none">')).toBeUndefined();
+    const { screen } = compileScreen(
+      doc('<img src="../assets/a.png">', '<meta name="adl:media" content="photo">'),
+      ctx(),
+    );
+    expect(screen.media).toBe('image');
+    expect(screen.warnings.join(' ')).toMatch(/adl:media "photo"/);
+  });
+});
+
 describe('data-adl-sound', () => {
   const sfiles: Record<string, string> = { 'sounds/chime.wav': 'RIFF', 'sounds/pop.mp3': 'ID3' };
   const sctx = (): CompileContext => ({
