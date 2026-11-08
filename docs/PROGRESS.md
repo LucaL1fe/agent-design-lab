@@ -307,8 +307,8 @@ Telling an agent which screens to change meant reading their ids off the canvas 
   `forgets a page whose file was deleted once the project stops listing it`.
 - Pictures vs built screens (Nov 8): on a page that mixes screenshots / recordings of the real product with screens
   built in HTML, the two looked the same. The compiler now marks a screen whose body is only one picture or video
-  (`media: image|video`, or `<meta name="adl:media">`), and the canvas draws a ring round its frame, a "Picture" /
-  "Video" tag in the corner (still readable zoomed far out) and a chip next to its id; `adl show` says it too.
+  (`media: image|video`, or `<meta name="adl:media">`), and the canvas shows a "Picture" / "Video" chip next to its id
+  and keeps its frame square (a thick ring + corner tag were too loud, removed the same day); `adl show` says it too.
   COMPILER_VERSION 5. Tests: unit `pictures and videos (adl:media)`.
 
 ## Open bugs

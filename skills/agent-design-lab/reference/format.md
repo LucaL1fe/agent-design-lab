@@ -110,8 +110,8 @@ pages; editing the JSON directly works too (the canvas merges your write with th
   whose look settles later (a long entrance, a button that fills) sets its own moment with
   `<meta name="adl:snapshot" content="4200">` (ms).
 - A screen whose body is only one `<img>` / `<picture>` or one `<video>` (maybe inside plain wrappers) is a picture,
-  not a built screen: a photo, a screenshot or a recording of the real product. The canvas marks it (a ring round the
-  frame, a "Picture" / "Video" tag in its corner and next to its id) so nobody mistakes it for the design.
+  not a built screen: a photo, a screenshot or a recording of the real product. The canvas marks it (a "Picture" /
+  "Video" chip next to its id, square frame corners) so nobody mistakes it for the design.
   `<meta name="adl:media" content="image|video|none">` sets it by hand (`none` for a built screen that happens to be
   one big image).
 - A stylesheet shared by many screens may hold rules for each of them (scoped by a class or attribute on the screen's

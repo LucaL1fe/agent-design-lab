@@ -36,8 +36,6 @@ interface ScreenNode {
   mounting?: boolean;
   imgSize?: number;
   key: string;
-  /** The "Picture" / "Video" tag in the frame's corner of a screen that is only a picture or a video. */
-  mtag?: HTMLDivElement;
   /** The real product's capture shown in a device view (an <img>, or a <video> while it plays). */
   cap?: HTMLImageElement | HTMLVideoElement;
   capKey?: string;
@@ -563,24 +561,11 @@ export class Engine {
     if (appv) n.frame.dataset.nocap = `No ${this.appView} capture yet`;
     else delete n.frame.dataset.nocap;
     n.el.classList.toggle('proposal', !!it.proposalFor);
-    // pictures and videos look different from built screens at any zoom: a ring and a tag in the corner
     n.el.classList.toggle('media', !!meta?.media);
-    if (meta?.media) {
-      if (!n.mtag) {
-        n.mtag = document.createElement('div');
-        n.mtag.className = 'mtag';
-        n.mtag.title = MEDIA_TITLE;
-        n.frame.appendChild(n.mtag);
-      }
-      n.mtag.innerHTML = MEDIA_ICON[meta.media];
-      n.mtag.append(MEDIA_LABEL[meta.media]);
-    } else if (n.mtag) {
-      n.mtag.remove();
-      delete n.mtag;
-    }
     const f = this.model.frameOf(id, it);
     const preset = resolveFrame(f.spec, project);
-    const radius = preset?.radius ?? (f.w <= 480 ? 36 : 10);
+    // a picture or a video is shown as it is, square: no device corners cut into a screenshot
+    const radius = meta?.media ? 0 : (preset?.radius ?? (f.w <= 480 ? 36 : 10));
     n.frame.style.borderRadius = `${radius}px`;
     n.frame.style.background = this.model.snapOf(id, it)?.avg ?? '#1b1b1a';
     const planned = !meta;

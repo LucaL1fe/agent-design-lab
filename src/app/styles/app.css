@@ -451,7 +451,7 @@ svg.i {
 }
 
 /* a screen that is only a picture or a video (a photo, a screenshot, a recording), not HTML built for the design:
-   a chip next to its id, a ring round the frame and a tag in its corner (the caption hides when zoomed far out) */
+   a small chip next to its id; its frame keeps square corners (engine) */
 .it.scr .med {
   display: inline-flex;
   align-items: center;
@@ -463,32 +463,6 @@ svg.i {
   vertical-align: 2px;
   color: #0c2226;
   background: var(--media);
-}
-.it.scr.media .frame {
-  box-shadow:
-    0 0 0 2px #101010,
-    0 0 0 8px var(--media),
-    0 14px 34px rgba(0, 0, 0, 0.45);
-}
-.it.scr .mtag {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
-  z-index: 4;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 13px 7px 10px;
-  border-radius: 999px;
-  background: var(--media);
-  color: #0c2226;
-  font: 800 16px / 1 var(--ui);
-  pointer-events: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-}
-.zoom-far .it.scr .mtag {
-  transform: scale(2.4);
-  transform-origin: left bottom;
 }
 
 /* a screen with sounds: its speaker, off until clicked; one screen plays at a time */
